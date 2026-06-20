@@ -1,603 +1,1276 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EarnCash — UPI Referral & Cashback Ledger</title>
-  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
-  <style>
-    body { font-family: 'Plus Jakarta Sans', sans-serif; }
-    .heading-font { font-family: 'Space Grotesk', sans-serif; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UPI Referral Ledger — Cashback & Referral Tracker</title>
+<meta name="description" content="Find UPI apps giving joining & referral cashback, track who you've referred, and vote apps up or down based on whether offers still work.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%231F7A4D'/%3E%3Ctext x='50' y='68' font-size='58' text-anchor='middle' fill='white' font-family='Georgia'%3E%E2%82%B9%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<!-- ===================== STYLES ===================== -->
+<style>
+  :root{
+    --paper:#FBF8F1; --paper-alt:#F2EEE1; --paper-raised:#FFFFFF;
+    --ink:#1B2A2E; --ink-soft:#5B6D6E; --ink-faint:#8B9A9A;
+    --green:#1F7A4D; --green-deep:#145C39; --green-soft:#DDF1E3;
+    --gold:#C8932E; --gold-soft:#F6E9CC;
+    --stamp:#B4472D; --stamp-soft:#F6DFD7;
+    --line:#DAD3BF; --line-soft:#E8E3D3;
+    --radius:14px; --radius-sm:8px;
+    --shadow:0 4px 18px rgba(27,42,46,0.08);
+    --shadow-lg:0 16px 40px rgba(27,42,46,0.18);
+    --font-display:'Space Grotesk',sans-serif;
+    --font-body:'Inter',sans-serif;
+    --font-mono:'IBM Plex Mono',monospace;
+  }
+  [data-theme="dark"]{
+    --paper:#15201F; --paper-alt:#1C2826; --paper-raised:#1F2C2A;
+    --ink:#EDEAE0; --ink-soft:#AEBBB8; --ink-faint:#76847F;
+    --green:#3FCB81; --green-deep:#2E9C63; --green-soft:#1E332A;
+    --gold:#E0B458; --gold-soft:#332B17;
+    --stamp:#E07457; --stamp-soft:#3A2420;
+    --line:#33433F; --line-soft:#283733;
+    --shadow:0 4px 18px rgba(0,0,0,0.35);
+    --shadow-lg:0 16px 40px rgba(0,0,0,0.5);
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:var(--font-body); line-height:1.5;
+    transition:background .25s ease, color .25s ease;
+    background-image:
+      linear-gradient(var(--line-soft) 1px, transparent 1px);
+    background-size: 100% 42px;
+    background-attachment:local;
+  }
+  @media (prefers-reduced-motion:reduce){ *{transition:none!important; animation:none!important; scroll-behavior:auto!important;} }
+  ::selection{ background:var(--green-soft); }
+  :focus-visible{ outline:2px solid var(--green); outline-offset:2px; border-radius:4px; }
+  a{ color:var(--green-deep); }
+  code{ background:var(--paper-alt); padding:2px 6px; border-radius:4px; font-family:var(--font-mono); }
+
+  .conn-banner{
+    background:var(--stamp-soft); color:var(--stamp); border-bottom:1px solid var(--stamp);
+    text-align:center; padding:10px 16px; font-size:14px; font-family:var(--font-body);
+  }
+
+  /* ===== HEADER ===== */
+  .site-header{ background:var(--ink); color:var(--paper); position:sticky; top:0; z-index:30; box-shadow:var(--shadow);}
+  [data-theme="dark"] .site-header{ background:#0E1716; }
+  .header-inner{ max-width:1080px; margin:0 auto; padding:16px 20px; display:flex; align-items:center; justify-content:space-between; gap:16px;}
+  .brand{ display:flex; align-items:center; gap:12px; }
+  .brand-mark{
+    font-family:var(--font-display); font-weight:700; font-size:22px; color:var(--ink);
+    background:var(--green); width:42px; height:42px; border-radius:10px;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+    transform:rotate(-3deg); box-shadow:var(--shadow);
+  }
+  .brand-text{ display:flex; flex-direction:column; line-height:1.2; }
+  .brand-title{ font-family:var(--font-display); font-weight:700; font-size:19px; letter-spacing:.2px;}
+  .brand-sub{ font-size:12.5px; color:#B9C7C5; }
+  .header-actions{ display:flex; gap:10px; align-items:center; }
+  .admin-bar{
+    background:var(--gold-soft); border-top:1px dashed var(--gold); color:var(--ink);
+    display:flex; gap:10px; align-items:center; justify-content:center; padding:8px 16px; font-size:14px;
+  }
+  [data-theme="dark"] .admin-bar{ color:var(--ink); }
+  .admin-chip{ font-family:var(--font-mono); font-weight:600; background:var(--gold); color:#241a02; padding:3px 10px; border-radius:20px; font-size:12px; letter-spacing:.5px;}
+
+  /* ===== BUTTONS ===== */
+  .primary-btn, .ghost-btn, .danger-btn, .icon-btn{
+    font-family:var(--font-body); font-weight:600; cursor:pointer; border:none;
+    border-radius:10px; padding:10px 16px; font-size:14px; transition:transform .12s ease, filter .12s ease;
+  }
+  .primary-btn{ background:var(--green); color:#fff; box-shadow:var(--shadow);}
+  .primary-btn:hover{ filter:brightness(1.08); transform:translateY(-1px); }
+  .ghost-btn{ background:transparent; color:inherit; border:1.5px solid currentColor; opacity:.85;}
+  .ghost-btn:hover{ opacity:1; transform:translateY(-1px); }
+  .ghost-btn.small{ padding:6px 12px; font-size:12.5px; }
+  .danger-btn{ background:var(--stamp); color:#fff; }
+  .danger-btn:hover{ filter:brightness(1.1); }
+  .icon-btn{ background:transparent; color:inherit; font-size:18px; padding:6px 9px; border-radius:8px; }
+  .icon-btn:hover{ background:rgba(255,255,255,.12); }
+  .site-header .icon-btn:hover{ background:rgba(255,255,255,.12); }
+  button{ font-family:inherit; }
+
+  /* ===== CONTAINER / STATS ===== */
+  .container{ max-width:1080px; margin:0 auto; padding:24px 20px 60px; }
+  .stats-strip{
+    display:grid; grid-template-columns:repeat(4,1fr); gap:0;
+    background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius);
+    box-shadow:var(--shadow); overflow:hidden; margin-bottom:22px;
+  }
+  .stat-item{ padding:16px 14px; text-align:center; border-right:1px dashed var(--line); }
+  .stat-item:last-child{ border-right:none; }
+  .stat-item-wide{ grid-column:span 1; }
+  .stat-num{ display:block; font-family:var(--font-mono); font-size:20px; font-weight:600; color:var(--green-deep);}
+  .stat-item-wide .stat-num{ color:var(--ink); font-size:16px; }
+  .stat-label{ font-size:11.5px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.4px;}
+  @media (max-width:680px){ .stats-strip{ grid-template-columns:repeat(2,1fr); } .stat-item{ border-bottom:1px dashed var(--line);} }
+
+  /* ===== TABS ===== */
+  .tabs{ display:flex; gap:8px; margin-bottom:18px; border-bottom:1px solid var(--line); }
+  .tab-btn{
+    background:none; border:none; padding:10px 6px; margin-right:14px; font-family:var(--font-display);
+    font-weight:600; font-size:15px; color:var(--ink-soft); cursor:pointer; border-bottom:3px solid transparent; transform:translateY(1px);
+  }
+  .tab-btn.active{ color:var(--ink); border-bottom-color:var(--green); }
+
+  /* ===== CONTROLS ===== */
+  .controls-bar{ display:flex; flex-wrap:wrap; gap:10px; margin-bottom:18px; align-items:center; }
+  .controls-bar input[type="search"], .controls-bar select, .controls-bar input[type="text"]{
+    font-family:var(--font-body); padding:10px 12px; border-radius:10px; border:1.5px solid var(--line);
+    background:var(--paper-raised); color:var(--ink); font-size:14px;
+  }
+  #searchInput{ flex:1 1 220px; min-width:160px; }
+  .checkbox-pill{ display:flex; align-items:center; gap:6px; font-size:13.5px; color:var(--ink-soft); background:var(--paper-raised); border:1.5px solid var(--line); border-radius:20px; padding:8px 12px; }
+
+  /* ===== LOADING / EMPTY ===== */
+  .loading-state{ display:flex; flex-direction:column; gap:10px; }
+  .skeleton-row{ height:74px; border-radius:var(--radius); background:linear-gradient(90deg,var(--paper-alt) 25%, var(--line-soft) 37%, var(--paper-alt) 63%); background-size:400% 100%; animation:shimmer 1.4s infinite; }
+  @keyframes shimmer{ 0%{background-position:100% 0;} 100%{background-position:-100% 0;} }
+  .empty-state{ text-align:center; padding:50px 20px; color:var(--ink-soft); }
+  .empty-state p{ font-size:15px; margin-bottom:14px; }
+
+  /* ===== LEDGER LIST / ROWS (signature element) ===== */
+  .ledger-list{ background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; }
+  .ledger-row{
+    display:grid; grid-template-columns:48px 1.6fr 1fr 1fr 70px auto; gap:14px; align-items:center;
+    padding:16px 18px; border-bottom:1px dashed var(--line); position:relative;
+    animation:fadeIn .35s ease both;
+  }
+  @keyframes fadeIn{ from{ opacity:0; transform:translateY(4px);} to{opacity:1; transform:translateY(0);} }
+  .ledger-row:last-child{ border-bottom:none; }
+  .ledger-row:hover{ background:var(--paper-alt); }
+  .ledger-serial{ font-family:var(--font-mono); font-size:12.5px; color:var(--ink-faint); }
+  .row-main{ min-width:0; }
+  .row-name-line{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .row-name{ font-family:var(--font-display); font-weight:700; font-size:16px; }
+  .badge{ font-size:11px; font-weight:600; padding:2px 8px; border-radius:20px; white-space:nowrap; }
+  .badge-verified{ background:var(--green-soft); color:var(--green-deep); }
+  .badge-new{ background:var(--gold-soft); color:var(--gold); }
+  .badge-category{ background:var(--paper-alt); color:var(--ink-soft); }
+  .badge-top{ background:var(--gold); color:#2b2106; }
+  .row-meta{ font-size:12px; color:var(--ink-faint); margin-top:3px; }
+  .row-notes{ font-size:13px; color:var(--ink-soft); margin-top:6px; max-width:560px; }
+  .row-notes .more-btn{ background:none; border:none; color:var(--green-deep); font-weight:600; cursor:pointer; font-size:12.5px; padding:0; margin-left:4px;}
+  .bonus-col{ font-family:var(--font-mono); }
+  .bonus-label{ font-size:10.5px; text-transform:uppercase; letter-spacing:.4px; color:var(--ink-faint); display:block; }
+  .bonus-amount{ font-size:14.5px; font-weight:600; color:var(--green-deep); }
+  [data-theme="dark"] .bonus-amount{ color:var(--green); }
+  .bonus-amount.none{ color:var(--ink-faint); font-weight:400; }
+
+  .stamp-pct{
+    width:54px; height:54px; border-radius:50%; position:relative; transform:rotate(-4deg);
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .stamp-pct::before{ content:''; position:absolute; inset:5px; border-radius:50%; background:var(--paper-raised); }
+  .stamp-pct span{ position:relative; transform:rotate(4deg); font-family:var(--font-mono); font-weight:700; font-size:12.5px; }
+  .stamp-pct.novotes{ background:repeating-conic-gradient(var(--line) 0deg 10deg, transparent 10deg 20deg); }
+  .stamp-pct.novotes span{ font-size:10px; color:var(--ink-faint); }
+
+  .row-actions{ display:flex; flex-direction:column; gap:6px; align-items:flex-end; }
+  .vote-row{ display:flex; gap:6px; }
+  .vote-btn{
+    font-family:var(--font-mono); font-size:12px; border:1.5px solid var(--line); background:var(--paper-raised);
+    border-radius:8px; padding:6px 9px; cursor:pointer; color:var(--ink-soft); display:flex; align-items:center; gap:4px;
+  }
+  .vote-btn:hover{ border-color:var(--green); }
+  .vote-btn.active.working{ background:var(--green-soft); border-color:var(--green); color:var(--green-deep); }
+  .vote-btn.active.not_working{ background:var(--stamp-soft); border-color:var(--stamp); color:var(--stamp); }
+  .row-links{ display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;}
+  .link-btn{ background:none; border:none; color:var(--ink-soft); font-size:12px; cursor:pointer; text-decoration:underline; padding:0; }
+  .link-btn:hover{ color:var(--green-deep); }
+  .link-btn.danger{ color:var(--stamp); }
+
+  .row-expand{ grid-column:1/-1; border-top:1px dashed var(--line); margin-top:10px; padding-top:12px; }
+
+  @media (max-width:760px){
+    .ledger-row{ grid-template-columns:1fr; }
+    .row-actions{ align-items:flex-start; flex-direction:row; justify-content:space-between; }
+    .stamp-pct{ position:absolute; top:14px; right:16px; }
+    .row-actions{ margin-top:6px; }
+  }
+
+  /* ===== ADD/REPORT MODAL FORMS ===== */
+  .bonus-fieldset{ border:1px dashed var(--line); border-radius:10px; padding:12px 14px; }
+  .bonus-fieldset legend{ font-size:12.5px; font-weight:600; color:var(--ink-soft); padding:0 4px; }
+  .radio-row{ display:flex; gap:14px; flex-wrap:wrap; font-size:13.5px; margin-bottom:8px;}
+  .radio-row label{ display:flex; align-items:center; gap:5px; font-weight:400; }
+  .amount-row{ display:flex; gap:10px; flex-wrap:wrap; }
+  .amount-row label{ flex:1; min-width:110px; font-size:12.5px; color:var(--ink-soft); display:flex; flex-direction:column; gap:4px;}
+  .amount-row input{ padding:8px 10px; border-radius:8px; border:1.5px solid var(--line); font-family:var(--font-mono); background:var(--paper-raised); color:var(--ink);}
+
+  /* ===== CONTACT FORM (ledger tab) ===== */
+  .contact-form{ display:flex; flex-wrap:wrap; gap:10px; margin-bottom:14px; }
+  .contact-form select, .contact-form input{ font-family:var(--font-body); padding:10px 12px; border-radius:10px; border:1.5px solid var(--line); background:var(--paper-raised); color:var(--ink); font-size:14px; }
+  .contact-form #contactName{ flex:1 1 160px; }
+  .contact-form #contactNote{ flex:1 1 160px; }
+  .ledger-intro h2{ font-family:var(--font-display); margin:0 0 4px; }
+  .ledger-intro p{ color:var(--ink-soft); font-size:14px; margin:0 0 18px; }
+
+  .status-pill{ font-size:11.5px; font-weight:600; padding:3px 10px; border-radius:20px; }
+  .status-to_refer{ background:var(--paper-alt); color:var(--ink-soft); }
+  .status-in_progress{ background:var(--gold-soft); color:var(--gold); }
+  .status-referred{ background:#dde6f6; color:#33588f; }
+  [data-theme="dark"] .status-referred{ background:#1c2a3a; color:#7fa6e0; }
+  .status-already_user{ background:var(--green-soft); color:var(--green-deep); }
+
+  /* ===== MODALS ===== */
+  .modal-backdrop{
+    position:fixed; inset:0; background:rgba(15,20,20,.55); display:flex; align-items:center; justify-content:center;
+    padding:20px; z-index:100; backdrop-filter:blur(2px);
+  }
+  .modal-card{
+    background:var(--paper-raised); border-radius:18px; max-width:520px; width:100%; max-height:88vh; overflow-y:auto;
+    box-shadow:var(--shadow-lg); padding:22px 24px; animation:slideUp .25s ease both; border:1px solid var(--line);
+  }
+  .modal-card-sm{ max-width:380px; }
+  @keyframes slideUp{ from{ opacity:0; transform:translateY(18px) scale(.98);} to{opacity:1; transform:translateY(0) scale(1);} }
+  .modal-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+  .modal-head h3{ font-family:var(--font-display); margin:0; }
+  .modal-sub{ font-size:13px; color:var(--ink-soft); margin:-6px 0 4px;}
+  .modal-form{ display:flex; flex-direction:column; gap:14px; }
+  .modal-form label{ display:flex; flex-direction:column; gap:5px; font-size:13px; font-weight:600; color:var(--ink-soft); }
+  .modal-form input[type=text], .modal-form input[type=email], .modal-form input[type=password], .modal-form input[type=number], .modal-form textarea{
+    font-family:var(--font-body); font-weight:400; padding:10px 12px; border-radius:10px; border:1.5px solid var(--line);
+    background:var(--paper); color:var(--ink); font-size:14.5px; resize:vertical;
+  }
+  .modal-actions{ display:flex; justify-content:flex-end; gap:10px; margin-top:4px; }
+  .confirm-message{ font-size:15px; margin:6px 0 18px; }
+
+  /* ===== TOASTS ===== */
+  .toast-container{ position:fixed; bottom:20px; left:50%; transform:translateX(-50%); display:flex; flex-direction:column; gap:8px; z-index:200; width:min(360px,90vw); }
+  .toast{
+    background:var(--ink); color:var(--paper); padding:12px 16px; border-radius:10px; font-size:13.5px;
+    box-shadow:var(--shadow-lg); animation:toastIn .25s ease both;
+  }
+  .toast.error{ background:var(--stamp); }
+  .toast.success{ background:var(--green-deep); }
+  @keyframes toastIn{ from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
+
+  .count-badge{ background:var(--stamp); color:#fff; font-size:10.5px; font-weight:700; border-radius:10px; padding:1px 6px; margin-left:4px; }
+
+  /* ===== FOOTER ===== */
+  .site-footer{ text-align:center; padding:30px 20px 50px; color:var(--ink-faint); font-size:12.5px; max-width:680px; margin:0 auto; }
+  .footer-fine{ margin-top:6px; }
+</style>
 </head>
-<body class="bg-slate-50 text-slate-900 min-h-screen pb-12 antialiased">
+<body data-theme="light">
 
-  <div class="max-w-3xl mx-auto px-4 sm:px-6 pt-6">
-    
-    <header class="flex justify-between items-start border-b border-slate-200 pb-5 mb-6">
-      <div>
-        <h1 class="heading-font text-3xl font-bold text-indigo-600 tracking-tight">₹ EarnCash Ledger</h1>
-        <p class="text-sm text-slate-500 mt-1">Community-sourced tracker for live UPI joining & referral bonuses.</p>
-      </div>
-      <button id="adminAuthBtn" onclick="toggleAdminModal()" class="flex items-center justify-center p-2.5 bg-white border border-slate-200 rounded-full hover:bg-slate-50 text-slate-600 shadow-sm transition">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-      </button>
-    </header>
+<!-- ===================== CONNECTION BANNER ===================== -->
+<div id="connBanner" class="conn-banner" hidden>
+  ⚠️ <strong>Not connected yet.</strong> Open <code>index.html</code>, find <code>SUPABASE_URL</code> and <code>SUPABASE_ANON_KEY</code> near the top of the script, and paste in your Supabase project values.
+</div>
 
-    <div id="adminBanner" class="hidden flex items-center justify-between bg-emerald-600 text-white px-4 py-2.5 rounded-xl mb-6 shadow-sm text-sm">
-      <span class="flex items-center gap-2 font-medium">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-        Admin privileges unlocked. You can now verify or delete entries.
-      </span>
-      <button onclick="handleAdminLogout()" class="underline font-semibold tracking-wide hover:text-emerald-100 cursor-pointer">Exit Mode</button>
-    </div>
-
-    <div class="flex flex-col sm:flex-row gap-3 mb-6">
-      <div class="relative flex-1">
-        <span class="absolute inset-y-0 left-3 flex items-center text-slate-400">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0x"/></svg>
-        </span>
-        <input type="text" id="searchInput" oninput="renderAppsList()" placeholder="Search app name or category..." class="w-full bg-white border border-slate-200 text-slate-900 rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm transition">
-      </div>
-      <div class="flex gap-2">
-        <select id="sortBySelect" onchange="renderAppsList()" class="bg-white border border-slate-200 text-slate-800 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm cursor-pointer">
-          <option value="newest">Newest First</option>
-          <option value="referral">Highest Referral</option>
-          <option value="joining">Highest Joining</option>
-          <option value="working">Highest % Working</option>
-        </select>
-        <button onclick="toggleFormVisibility()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-xl px-4 py-2.5 text-sm flex items-center gap-1.5 transition shadow-md shadow-indigo-100 shrink-0 cursor-pointer">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
-          Add Offer
-        </button>
+<!-- ===================== HEADER ===================== -->
+<header class="site-header">
+  <div class="header-inner">
+    <div class="brand">
+      <span class="brand-mark">₹</span>
+      <div class="brand-text">
+        <span class="brand-title">UPI Referral Ledger</span>
+        <span class="brand-sub">Cashback offers, tracked &amp; verified by the crowd</span>
       </div>
     </div>
+    <div class="header-actions">
+      <button id="themeToggle" class="icon-btn" title="Toggle dark mode" aria-label="Toggle dark mode">🌙</button>
+      <button id="adminLoginBtn" class="ghost-btn">🔐 Admin</button>
+    </div>
+  </div>
+  <div id="adminBar" class="admin-bar" hidden>
+    <span class="admin-chip">🛡 ADMIN MODE</span>
+    <button id="viewReportsBtn" class="ghost-btn small">🚩 Reports <span id="reportsBadge" class="count-badge" hidden>0</span></button>
+    <button id="adminLogoutBtn" class="ghost-btn small">Sign out</button>
+  </div>
+</header>
 
-    <form id="appSubmitForm" class="hidden bg-white border border-slate-200 rounded-2xl p-5 mb-6 shadow-sm transition-all animate-fadeIn">
-      <h2 class="heading-font text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="indigo" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-        List a New Cashback Offer
-      </h2>
-      
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-        <div>
-          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">App Name *</label>
-          <input type="text" id="formAppName" required placeholder="e.g. PhonePe, GPay" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900">
-        </div>
-        <div>
-          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Category</label>
-          <input type="text" id="formCategory" placeholder="e.g. Payments, NeoBank" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900">
-        </div>
-      </div>
+<main class="container">
 
-      <div class="mb-4 bg-slate-50 p-3.5 rounded-xl border border-slate-100">
-        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Joining Bonus Details</label>
-        <div class="flex gap-2 mb-2">
-          <button type="button" onclick="setBonusType('joining', 'none')" id="btn-joining-none" class="bonus-tab flex-1 py-1.5 text-xs font-medium border rounded-lg bg-white shadow-sm border-slate-200 text-slate-700">None</button>
-          <button type="button" onclick="setBonusType('joining', 'fixed')" id="btn-joining-fixed" class="bonus-tab flex-1 py-1.5 text-xs font-medium border rounded-lg bg-white shadow-sm border-slate-200 text-slate-700">Fixed Amount</button>
-          <button type="button" onclick="setBonusType('joining', 'range')" id="btn-joining-range" class="bonus-tab flex-1 py-1.5 text-xs font-medium border rounded-lg bg-white shadow-sm border-slate-200 text-slate-700">Variable Range</button>
-        </div>
-        <div id="wrapper-joining-fixed" class="hidden">
-          <input type="number" id="formJoiningFixed" placeholder="₹ Bonus Amount" class="w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-        </div>
-        <div id="wrapper-joining-range" class="hidden flex gap-2">
-          <input type="number" id="formJoiningMin" placeholder="Min ₹" class="w-1/2 bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-          <input type="number" id="formJoiningMax" placeholder="Max ₹" class="w-1/2 bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-        </div>
-      </div>
+  <!-- ===================== STATS ===================== -->
+  <section class="stats-strip" aria-label="Summary stats">
+    <div class="stat-item">
+      <span class="stat-num" id="statTotalApps">—</span>
+      <span class="stat-label">Apps listed</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-num" id="statVerified">—</span>
+      <span class="stat-label">Admin verified</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-num" id="statTotalVotes">—</span>
+      <span class="stat-label">Votes cast</span>
+    </div>
+    <div class="stat-item stat-item-wide">
+      <span class="stat-num" id="statTopApp">—</span>
+      <span class="stat-label">Top rated right now</span>
+    </div>
+  </section>
 
-      <div class="mb-4 bg-slate-50 p-3.5 rounded-xl border border-slate-100">
-        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Referral Reward Details</label>
-        <div class="flex gap-2 mb-2">
-          <button type="button" onclick="setBonusType('referral', 'none')" id="btn-referral-none" class="bonus-tab flex-1 py-1.5 text-xs font-medium border rounded-lg bg-white shadow-sm border-slate-200 text-slate-700">None</button>
-          <button type="button" onclick="setBonusType('referral', 'fixed')" id="btn-referral-fixed" class="bonus-tab flex-1 py-1.5 text-xs font-medium border rounded-lg bg-white shadow-sm border-slate-200 text-slate-700">Fixed Amount</button>
-          <button type="button" onclick="setBonusType('referral', 'range')" id="btn-referral-range" class="bonus-tab flex-1 py-1.5 text-xs font-medium border rounded-lg bg-white shadow-sm border-slate-200 text-slate-700">Variable Range</button>
-        </div>
-        <div id="wrapper-referral-fixed" class="hidden">
-          <input type="number" id="formReferralFixed" placeholder="₹ Per Successful Referral" class="w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-        </div>
-        <div id="wrapper-referral-range" class="hidden flex gap-2">
-          <input type="number" id="formReferralMin" placeholder="Min Per Referral" class="w-1/2 bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-          <input type="number" id="formReferralMax" placeholder="Max Per Referral" class="w-1/2 bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-        </div>
-      </div>
+  <!-- ===================== TABS ===================== -->
+  <div class="tabs" role="tablist">
+    <button class="tab-btn active" id="tabApps" role="tab" aria-selected="true">📒 Browse apps</button>
+    <button class="tab-btn" id="tabLedger" role="tab" aria-selected="false">👥 My referral tracker</button>
+  </div>
 
-      <div class="mb-4">
-        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Claim Conditions & Notes</label>
-        <textarea id="formNotes" rows="2" placeholder="Example: Requires a transaction of minimum ₹50 within 5 days of signing up..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900"></textarea>
-      </div>
+  <!-- ===================== APPS PANEL ===================== -->
+  <section id="appsPanel" class="tab-panel">
 
-      <div class="mb-4">
-        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Contributor Name</label>
-        <input type="text" id="formAddedBy" placeholder="Anonymous" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900">
-      </div>
+    <div class="controls-bar">
+      <input id="searchInput" type="search" placeholder="🔍 Search apps by name…" aria-label="Search apps">
+      <select id="categoryFilter" aria-label="Filter by category"><option value="">All categories</option></select>
+      <select id="sortSelect" aria-label="Sort apps">
+        <option value="top">⭐ Top rated</option>
+        <option value="newest">🆕 Newest first</option>
+        <option value="joining">💰 Highest joining bonus</option>
+        <option value="referral">🤝 Highest referral bonus</option>
+        <option value="az">🔤 A–Z</option>
+      </select>
+      <label class="checkbox-pill">
+        <input type="checkbox" id="verifiedOnlyCheckbox"> Verified only
+      </label>
+      <button id="addAppBtn" class="primary-btn">＋ Add an app</button>
+    </div>
 
-      <div id="formErrorMessage" class="hidden text-rose-600 text-xs font-semibold mb-3"></div>
+    <div id="loadingState" class="loading-state">
+      <div class="skeleton-row"></div>
+      <div class="skeleton-row"></div>
+      <div class="skeleton-row"></div>
+    </div>
 
-      <div class="flex justify-end gap-2">
-        <button type="button" onclick="toggleFormVisibility()" class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer">Cancel</button>
-        <button type="submit" class="px-4 py-2 text-sm font-medium bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow transition cursor-pointer">Publish Entry</button>
-      </div>
+    <div id="emptyState" class="empty-state" hidden>
+      <p>📭 No apps match this yet.</p>
+      <button class="primary-btn" id="emptyAddBtn">＋ Be the first to add one</button>
+    </div>
+
+    <div id="appsList" class="ledger-list" hidden></div>
+
+  </section>
+
+  <!-- ===================== LEDGER (REFERRAL TRACKER) PANEL ===================== -->
+  <section id="ledgerPanel" class="tab-panel" hidden>
+    <div class="ledger-intro">
+      <h2>Your personal referral tracker</h2>
+      <p>Keep a private list of who you've referred to which app, and where each one stands. This list is saved only in <strong>this browser</strong> — nobody else can see it.</p>
+    </div>
+
+    <form id="contactForm" class="contact-form">
+      <select id="contactApp" required aria-label="App"></select>
+      <input id="contactName" type="text" placeholder="Contact's name" required maxlength="60">
+      <select id="contactStatus" aria-label="Status">
+        <option value="to_refer">📋 To refer</option>
+        <option value="in_progress">⏳ In progress</option>
+        <option value="referred">📨 Referred — pending</option>
+        <option value="already_user">✅ Already a user</option>
+      </select>
+      <input id="contactNote" type="text" placeholder="Note (optional)" maxlength="120">
+      <button type="submit" class="primary-btn">＋ Add</button>
     </form>
 
-    <main id="appsContainer" class="space-y-4">
-      <div class="text-center py-12 text-slate-500">
-        <div class="animate-spin inline-block w-6 height-6 border-2 border-current border-t-transparent text-indigo-600 rounded-full mb-2" role="status"></div>
-        <p class="text-sm font-medium">Synchronizing application index...</p>
-      </div>
-    </main>
+    <div class="controls-bar">
+      <select id="contactStatusFilter" aria-label="Filter by status">
+        <option value="">All statuses</option>
+        <option value="to_refer">📋 To refer</option>
+        <option value="in_progress">⏳ In progress</option>
+        <option value="referred">📨 Referred — pending</option>
+        <option value="already_user">✅ Already a user</option>
+      </select>
+      <select id="contactAppFilter" aria-label="Filter by app"><option value="">All apps</option></select>
+    </div>
 
+    <div id="contactEmptyState" class="empty-state" hidden>
+      <p>👋 No contacts yet. Add the first person above.</p>
+    </div>
+
+    <div id="contactsTable" class="ledger-list"></div>
+  </section>
+
+  <!-- ===================== ADMIN REPORTS PANEL ===================== -->
+  <section id="reportsPanel" class="tab-panel" hidden>
+    <div class="ledger-intro">
+      <h2>🚩 Pending reports</h2>
+      <p>Review reports from users, then verify, edit, or remove the affected app.</p>
+    </div>
+    <div id="reportsEmptyState" class="empty-state" hidden><p>✨ No pending reports. All clear.</p></div>
+    <div id="reportsList" class="ledger-list"></div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <p>Built by the community, for the community. Cashback offers change often — vote to keep this list honest. Not affiliated with any bank, NPCI, or UPI app.</p>
+  <p class="footer-fine">Have feedback? Add an app, report a dead offer, or open an issue on the GitHub repo.</p>
+</footer>
+
+<!-- ===================== TOASTS ===================== -->
+<div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
+<!-- ===================== MODAL: ADD / EDIT APP ===================== -->
+<div class="modal-backdrop" id="addAppModalBackdrop" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="addAppTitle">
+    <div class="modal-head">
+      <h3 id="addAppTitle">＋ Add an app</h3>
+      <button class="icon-btn" data-close="addAppModalBackdrop" aria-label="Close">✕</button>
+    </div>
+    <form id="addAppForm" class="modal-form">
+      <input type="hidden" id="editAppId">
+      <label>App name *
+        <input id="f_name" type="text" required maxlength="60" placeholder="e.g. Navi, Groww, CRED">
+      </label>
+      <label>Category
+        <input id="f_category" type="text" list="categoryOptions" placeholder="e.g. Payments, Investment, Banking">
+        <datalist id="categoryOptions">
+          <option value="Payments">
+          <option value="Investment & Trading">
+          <option value="Banking">
+          <option value="Shopping & Rewards">
+          <option value="Credit Cards">
+          <option value="Recharge & Bills">
+          <option value="Gaming">
+          <option value="Other">
+        </datalist>
+      </label>
+
+      <fieldset class="bonus-fieldset">
+        <legend>Joining bonus (for new sign-ups)</legend>
+        <div class="radio-row">
+          <label><input type="radio" name="joiningType" value="none" checked> None</label>
+          <label><input type="radio" name="joiningType" value="fixed"> Fixed amount</label>
+          <label><input type="radio" name="joiningType" value="range"> Range</label>
+        </div>
+        <div class="amount-row" id="joinFixedRow" hidden>
+          <label>Amount (₹)<input id="f_joinFixed" type="number" min="0" step="1"></label>
+        </div>
+        <div class="amount-row" id="joinRangeRow" hidden>
+          <label>Min (₹)<input id="f_joinMin" type="number" min="0" step="1"></label>
+          <label>Max (₹)<input id="f_joinMax" type="number" min="0" step="1"></label>
+        </div>
+      </fieldset>
+
+      <fieldset class="bonus-fieldset">
+        <legend>Referral bonus (per friend referred)</legend>
+        <div class="radio-row">
+          <label><input type="radio" name="referralType" value="none" checked> None</label>
+          <label><input type="radio" name="referralType" value="fixed"> Fixed amount</label>
+          <label><input type="radio" name="referralType" value="range"> Range</label>
+        </div>
+        <div class="amount-row" id="refFixedRow" hidden>
+          <label>Amount (₹)<input id="f_refFixed" type="number" min="0" step="1"></label>
+        </div>
+        <div class="amount-row" id="refRangeRow" hidden>
+          <label>Min (₹)<input id="f_refMin" type="number" min="0" step="1"></label>
+          <label>Max (₹)<input id="f_refMax" type="number" min="0" step="1"></label>
+        </div>
+      </fieldset>
+
+      <label>How to claim / notes
+        <textarea id="f_notes" rows="3" maxlength="500" placeholder="e.g. Sign up, complete KYC, bonus credited in 24h. Referral code must be entered at signup."></textarea>
+      </label>
+      <label>Your name (optional)
+        <input id="f_addedBy" type="text" maxlength="40" placeholder="Anonymous">
+      </label>
+      <div class="modal-actions">
+        <button type="button" class="ghost-btn" data-close="addAppModalBackdrop">Cancel</button>
+        <button type="submit" class="primary-btn" id="addAppSubmitBtn">Add app</button>
+      </div>
+    </form>
   </div>
+</div>
 
-  <div id="adminModal" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-    <div class="bg-white border border-slate-200 rounded-2xl w-full max-w-sm p-6 shadow-xl relative animate-scaleUp">
-      <h3 class="heading-font text-lg font-bold text-slate-800 mb-2">Admin Dashboard Authentication</h3>
-      <p class="text-xs text-slate-500 mb-4">Provide valid Supabase administrative account credentials to authorize destructive or audit updates.</p>
-      
-      <div class="space-y-3 mb-4">
-        <input type="email" id="adminEmailInput" placeholder="Admin Email" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900">
-        <input type="password" id="adminPasswordInput" placeholder="Password Access Code" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900">
+<!-- ===================== MODAL: REPORT ===================== -->
+<div class="modal-backdrop" id="reportModalBackdrop" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="reportTitle">
+    <div class="modal-head">
+      <h3 id="reportTitle">🚩 Report an issue</h3>
+      <button class="icon-btn" data-close="reportModalBackdrop" aria-label="Close">✕</button>
+    </div>
+    <form id="reportForm" class="modal-form">
+      <input type="hidden" id="reportAppId">
+      <p id="reportAppName" class="modal-sub"></p>
+      <label>What's wrong?
+        <textarea id="reportReason" rows="3" required maxlength="300" placeholder="e.g. Offer expired, referral code not working, amount is wrong…"></textarea>
+      </label>
+      <div class="modal-actions">
+        <button type="button" class="ghost-btn" data-close="reportModalBackdrop">Cancel</button>
+        <button type="submit" class="primary-btn">Submit report</button>
       </div>
-      <div id="adminAuthErrorMessage" class="hidden text-rose-600 text-xs font-medium mb-3"></div>
-      
-      <div class="flex justify-end gap-2">
-        <button onclick="toggleAdminModal()" class="px-3.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer">Close</button>
-        <button onclick="handleAdminLogin()" class="px-3.5 py-1.5 text-xs font-medium bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow cursor-pointer">Authenticate</button>
+    </form>
+  </div>
+</div>
+
+<!-- ===================== MODAL: ADMIN LOGIN ===================== -->
+<div class="modal-backdrop" id="adminLoginModalBackdrop" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="adminLoginTitle">
+    <div class="modal-head">
+      <h3 id="adminLoginTitle">🔐 Admin sign in</h3>
+      <button class="icon-btn" data-close="adminLoginModalBackdrop" aria-label="Close">✕</button>
+    </div>
+    <form id="adminLoginForm" class="modal-form">
+      <label>Email <input id="adminEmail" type="email" required></label>
+      <label>Password <input id="adminPassword" type="password" required></label>
+      <div class="modal-actions">
+        <button type="button" class="ghost-btn" data-close="adminLoginModalBackdrop">Cancel</button>
+        <button type="submit" class="primary-btn">Sign in</button>
       </div>
+    </form>
+  </div>
+</div>
+
+<!-- ===================== MODAL: GENERIC CONFIRM ===================== -->
+<div class="modal-backdrop" id="confirmModalBackdrop" hidden>
+  <div class="modal-card modal-card-sm" role="alertdialog" aria-modal="true">
+    <p id="confirmMessage" class="confirm-message"></p>
+    <div class="modal-actions">
+      <button type="button" class="ghost-btn" id="confirmCancelBtn">Cancel</button>
+      <button type="button" class="danger-btn" id="confirmOkBtn">Confirm</button>
     </div>
   </div>
+</div>
 
-  <script>
-    // --- SUPABASE CONFIGURATION ---
-    const SUPABASE_URL = "https://bkjgxhbiomeuasexpxru.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJramd4aGJpb21ldWFzZXhweHJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5NzMyMTQsImV4cCI6MjA5NzU0OTIxNH0.zqcFeuL5FtFLwCtz4p2dESHt9-1uCzIY1hbQGeYgYS8";
-    
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+/* ============================================================
+   1. CONFIG — paste your Supabase project values here
+   ============================================================ */
+const SUPABASE_URL = 'https://bkjgxhbiomeuasexpxru.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJramd4aGJpb21ldWFzZXhweHJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5NzMyMTQsImV4cCI6MjA5NzU0OTIxNH0.zqcFeuL5FtFLwCtz4p2dESHt9-1uCzIY1hbQGeYgYS8';
 
-    // --- STATE ENGINE OBJECTS ---
-    let appsDataStore = [];
-    let votesDataStore = [];
-    let reportsDataStore = [];
-    let activeDeviceId = null;
-    let administrativeSession = null;
-    
-    let activeBonusConfiguration = { joining: 'none', referral: 'none' };
-    let activeReportingTargetId = null;
+const isConfigured = !SUPABASE_URL.includes('YOUR_') && !SUPABASE_ANON_KEY.includes('YOUR_');
+const { createClient } = supabase;
+const sb = isConfigured ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
-    // --- INITIALIZATION ---
-    window.addEventListener('DOMContentLoaded', async () => {
-      await verifyDeviceIdentityToken();
-      await fetchDatabaseSnapshot();
-      listenToRealtimeBroadcasting();
-      setBonusType('joining', 'none');
-      setBonusType('referral', 'none');
-      
-      // Auto-restore validation if session exists locally
-      const { data } = await supabase.auth.getSession();
-      if(data?.session) {
-        administrativeSession = data.session;
-        document.getElementById('adminBanner').classList.remove('hidden');
-        renderAppsList();
-      }
-    });
+/* ============================================================
+   2. ELEMENT REFS
+   ============================================================ */
+const $ = (id) => document.getElementById(id);
 
-    async function verifyDeviceIdentityToken() {
-      let identifier = localStorage.getItem('earn_cash_dev_token');
-      if(!identifier) {
-        identifier = 'dev_' + Math.random().toString(36).substring(2) + Date.now().toString(36);
-        localStorage.setItem('earn_cash_dev_token', identifier);
-      }
-      activeDeviceId = identifier;
+const connBanner = $('connBanner');
+const themeToggle = $('themeToggle');
+const adminLoginBtn = $('adminLoginBtn');
+const adminBar = $('adminBar');
+const viewReportsBtn = $('viewReportsBtn');
+const reportsBadge = $('reportsBadge');
+const adminLogoutBtn = $('adminLogoutBtn');
+
+const statTotalApps = $('statTotalApps');
+const statVerified = $('statVerified');
+const statTotalVotes = $('statTotalVotes');
+const statTopApp = $('statTopApp');
+
+const tabApps = $('tabApps');
+const tabLedger = $('tabLedger');
+const appsPanel = $('appsPanel');
+const ledgerPanel = $('ledgerPanel');
+const reportsPanel = $('reportsPanel');
+
+const searchInput = $('searchInput');
+const categoryFilter = $('categoryFilter');
+const sortSelect = $('sortSelect');
+const verifiedOnlyCheckbox = $('verifiedOnlyCheckbox');
+const addAppBtn = $('addAppBtn');
+const emptyAddBtn = $('emptyAddBtn');
+const loadingState = $('loadingState');
+const emptyState = $('emptyState');
+const appsList = $('appsList');
+
+const contactForm = $('contactForm');
+const contactApp = $('contactApp');
+const contactName = $('contactName');
+const contactStatus = $('contactStatus');
+const contactNote = $('contactNote');
+const contactStatusFilter = $('contactStatusFilter');
+const contactAppFilter = $('contactAppFilter');
+const contactEmptyState = $('contactEmptyState');
+const contactsTable = $('contactsTable');
+
+const reportsEmptyState = $('reportsEmptyState');
+const reportsList = $('reportsList');
+
+const toastContainer = $('toastContainer');
+
+const addAppModalBackdrop = $('addAppModalBackdrop');
+const addAppTitle = $('addAppTitle');
+const addAppForm = $('addAppForm');
+const editAppId = $('editAppId');
+const f_name = $('f_name');
+const f_category = $('f_category');
+const joinFixedRow = $('joinFixedRow');
+const joinRangeRow = $('joinRangeRow');
+const f_joinFixed = $('f_joinFixed');
+const f_joinMin = $('f_joinMin');
+const f_joinMax = $('f_joinMax');
+const refFixedRow = $('refFixedRow');
+const refRangeRow = $('refRangeRow');
+const f_refFixed = $('f_refFixed');
+const f_refMin = $('f_refMin');
+const f_refMax = $('f_refMax');
+const f_notes = $('f_notes');
+const f_addedBy = $('f_addedBy');
+const addAppSubmitBtn = $('addAppSubmitBtn');
+
+const reportModalBackdrop = $('reportModalBackdrop');
+const reportAppId = $('reportAppId');
+const reportAppName = $('reportAppName');
+const reportForm = $('reportForm');
+const reportReason = $('reportReason');
+
+const adminLoginModalBackdrop = $('adminLoginModalBackdrop');
+const adminLoginForm = $('adminLoginForm');
+const adminEmail = $('adminEmail');
+const adminPassword = $('adminPassword');
+
+const confirmModalBackdrop = $('confirmModalBackdrop');
+const confirmMessage = $('confirmMessage');
+const confirmCancelBtn = $('confirmCancelBtn');
+const confirmOkBtn = $('confirmOkBtn');
+
+/* ============================================================
+   3. STATE
+   ============================================================ */
+let appsCache = [];
+let votesAgg = {};   // { appId: {working, not_working} }
+let myVotes = {};    // { appId: 'working' | 'not_working' }
+let reportsCache = [];
+let isAdmin = false;
+
+const DEVICE_KEY = 'upi_device_id';
+let deviceId = localStorage.getItem(DEVICE_KEY);
+if (!deviceId) {
+  deviceId = crypto.randomUUID ? crypto.randomUUID() : 'd' + Date.now() + Math.random().toString(36).slice(2);
+  localStorage.setItem(DEVICE_KEY, deviceId);
+}
+
+/* ============================================================
+   4. UTILITIES
+   ============================================================ */
+function escapeHtml(str) {
+  return String(str ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+function truncate(str, n) { return str.length > n ? str.slice(0, n).trim() + '…' : str; }
+function formatBonus(type, min, max) {
+  if (type === 'fixed') return '₹' + Math.round(min).toLocaleString('en-IN');
+  if (type === 'range') return '₹' + Math.round(min).toLocaleString('en-IN') + '–₹' + Math.round(max).toLocaleString('en-IN');
+  return '—';
+}
+function bonusMaxValue(type, min, max) { if (type === 'none') return 0; return type === 'fixed' ? min : max; }
+function timeAgo(dateStr) {
+  const diffMs = Date.now() - new Date(dateStr).getTime();
+  const sec = diffMs / 1000;
+  if (sec < 60) return 'just now';
+  const min = sec / 60; if (min < 60) return Math.floor(min) + 'm ago';
+  const hr = min / 60; if (hr < 24) return Math.floor(hr) + 'h ago';
+  const day = hr / 24; if (day < 30) return Math.floor(day) + 'd ago';
+  const mo = day / 30; if (mo < 12) return Math.floor(mo) + 'mo ago';
+  return Math.floor(mo / 12) + 'y ago';
+}
+function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
+function toast(msg, type = 'info') {
+  const el = document.createElement('div');
+  el.className = 'toast' + (type !== 'info' ? ' ' + type : '');
+  el.textContent = msg;
+  toastContainer.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity .3s'; setTimeout(() => el.remove(), 300); }, 3200);
+}
+function openModal(id) { $(id).hidden = false; }
+function closeModal(id) { $(id).hidden = true; }
+function confirmAction(message) {
+  return new Promise(resolve => {
+    confirmMessage.textContent = message;
+    openModal('confirmModalBackdrop');
+    confirmOkBtn.addEventListener('click', () => { closeModal('confirmModalBackdrop'); resolve(true); }, { once: true });
+    confirmCancelBtn.addEventListener('click', () => { closeModal('confirmModalBackdrop'); resolve(false); }, { once: true });
+  });
+}
+function getVoteStats(appId) {
+  const v = votesAgg[appId] || { working: 0, not_working: 0 };
+  const total = v.working + v.not_working;
+  const pct = total ? Math.round((v.working / total) * 100) : null;
+  return { ...v, total, pct };
+}
+function statusLabel(s) {
+  return { to_refer: '📋 To refer', in_progress: '⏳ In progress', referred: '📨 Referred', already_user: '✅ Already a user' }[s] || s;
+}
+
+/* ============================================================
+   5. PERSONAL REFERRAL TRACKER (browser-local only — never sent to Supabase)
+   ============================================================ */
+const CONTACTS_KEY = 'upi_referral_contacts_v1';
+function loadAllContacts() { try { return JSON.parse(localStorage.getItem(CONTACTS_KEY)) || []; } catch { return []; } }
+function saveAllContacts(list) { localStorage.setItem(CONTACTS_KEY, JSON.stringify(list)); }
+function getContacts(appId) { return loadAllContacts().filter(c => c.app_id === appId); }
+function addContactEntry(entry) {
+  const list = loadAllContacts();
+  list.unshift({ id: crypto.randomUUID ? crypto.randomUUID() : 'c' + Date.now(), created_at: new Date().toISOString(), ...entry });
+  saveAllContacts(list);
+}
+function updateContactEntry(id, patch) {
+  const list = loadAllContacts();
+  const idx = list.findIndex(c => c.id === id);
+  if (idx > -1) { list[idx] = { ...list[idx], ...patch }; saveAllContacts(list); }
+}
+function deleteContactEntry(id) { saveAllContacts(loadAllContacts().filter(c => c.id !== id)); }
+
+/* ============================================================
+   6. RENDERING
+   ============================================================ */
+function renderStats() {
+  statTotalApps.textContent = appsCache.length;
+  statVerified.textContent = appsCache.filter(a => a.verified_by_admin).length;
+  let totalVotes = 0, best = null;
+  appsCache.forEach(a => {
+    const s = getVoteStats(a.id);
+    totalVotes += s.total;
+    if (s.pct !== null && (!best || s.pct > best.pct)) best = { name: a.name, pct: s.pct };
+  });
+  statTotalVotes.textContent = totalVotes;
+  statTopApp.textContent = best ? `${best.name} · ${best.pct}%` : '—';
+}
+
+function renderCategoryOptions() {
+  const cats = [...new Set(appsCache.map(a => a.category).filter(Boolean))].sort();
+  const curCat = categoryFilter.value;
+  categoryFilter.innerHTML = '<option value="">All categories</option>' + cats.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+  if (cats.includes(curCat)) categoryFilter.value = curCat;
+
+  const appOptions = appsCache.map(a => `<option value="${a.id}">${escapeHtml(a.name)}</option>`).join('');
+  const curContactApp = contactApp.value;
+  contactApp.innerHTML = appOptions || '<option value="">Add an app first →</option>';
+  if ([...contactApp.options].some(o => o.value === curContactApp)) contactApp.value = curContactApp;
+
+  const curAppFilter = contactAppFilter.value;
+  contactAppFilter.innerHTML = '<option value="">All apps</option>' + appOptions;
+  if ([...contactAppFilter.options].some(o => o.value === curAppFilter)) contactAppFilter.value = curAppFilter;
+}
+
+function getFilteredSortedApps() {
+  let list = appsCache.slice();
+  const q = searchInput.value.trim().toLowerCase();
+  if (q) list = list.filter(a => a.name.toLowerCase().includes(q));
+  if (categoryFilter.value) list = list.filter(a => a.category === categoryFilter.value);
+  if (verifiedOnlyCheckbox.checked) list = list.filter(a => a.verified_by_admin);
+
+  const sort = sortSelect.value;
+  list.sort((a, b) => {
+    if (sort === 'top') {
+      const pa = getVoteStats(a.id).pct, pb = getVoteStats(b.id).pct;
+      if (pa === null && pb === null) return new Date(b.created_at) - new Date(a.created_at);
+      if (pa === null) return 1;
+      if (pb === null) return -1;
+      if (pb !== pa) return pb - pa;
+      return getVoteStats(b.id).total - getVoteStats(a.id).total;
     }
+    if (sort === 'newest') return new Date(b.created_at) - new Date(a.created_at);
+    if (sort === 'joining') return bonusMaxValue(b.joining_type, b.joining_min, b.joining_max) - bonusMaxValue(a.joining_type, a.joining_min, a.joining_max);
+    if (sort === 'referral') return bonusMaxValue(b.referral_type, b.referral_min, b.referral_max) - bonusMaxValue(a.referral_type, a.referral_min, a.referral_max);
+    if (sort === 'az') return a.name.localeCompare(b.name);
+    return 0;
+  });
+  return list;
+}
 
-    async function fetchDatabaseSnapshot() {
-      try {
-        const [appsRes, votesRes, reportsRes] = await Promise.all([
-          supabase.from('apps').select('*'),
-          supabase.from('votes').select('*'),
-          supabase.from('reports').select('*')
-        ]);
-        
-        appsDataStore = appsRes.data || [];
-        votesDataStore = votesRes.data || [];
-        reportsDataStore = reportsRes.data || [];
-        
-        renderAppsList();
-      } catch (err) {
-        console.error("Critical Synchronization Fault: ", err);
-      }
-    }
+function renderApps() {
+  if (!isConfigured) return;
+  const list = getFilteredSortedApps();
+  if (!list.length) { appsList.hidden = true; emptyState.hidden = false; return; }
+  emptyState.hidden = true; appsList.hidden = false;
+  const isTopSort = sortSelect.value === 'top';
+  appsList.innerHTML = list.map((app, i) => renderAppRow(app, i, isTopSort)).join('');
+}
 
-    // --- LIVE SYNCHRONIZATION REALTIME PIPELINE ---
-    function listenToRealtimeBroadcasting() {
-      supabase.channel('public-ledger-channel')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'apps' }, () => fetchDatabaseSnapshot())
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'votes' }, () => fetchDatabaseSnapshot())
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'reports' }, () => fetchDatabaseSnapshot())
-        .subscribe();
-    }
+function renderAppRow(app, index, isTopSort) {
+  const stats = getVoteStats(app.id);
+  const pctColor = stats.pct === null ? null : stats.pct >= 70 ? 'var(--green)' : stats.pct >= 40 ? 'var(--gold)' : 'var(--stamp)';
+  const myVote = myVotes[app.id];
+  const isNew = (Date.now() - new Date(app.created_at).getTime()) < 1000 * 60 * 60 * 24 * 3;
+  const isTop = isTopSort && index === 0 && stats.total > 0;
+  const contacts = getContacts(app.id);
+  const notesShort = app.notes ? truncate(app.notes, 140) : '';
 
-    // --- UI FORM LOGIC ---
-    function toggleFormVisibility() {
-      const node = document.getElementById('appSubmitForm');
-      node.classList.toggle('hidden');
-    }
+  return `
+  <div class="ledger-row" data-app-id="${app.id}">
+    <div class="ledger-serial">${String(index + 1).padStart(3, '0')}</div>
+    <div class="row-main">
+      <div class="row-name-line">
+        <span class="row-name">${escapeHtml(app.name)}</span>
+        ${app.verified_by_admin ? '<span class="badge badge-verified">✅ Verified</span>' : ''}
+        ${isTop ? '<span class="badge badge-top">🏆 Top pick</span>' : ''}
+        ${isNew ? '<span class="badge badge-new">🆕 New</span>' : ''}
+        ${app.category ? `<span class="badge badge-category">${escapeHtml(app.category)}</span>` : ''}
+      </div>
+      <div class="row-meta">Added by ${escapeHtml(app.added_by || 'Anonymous')} · ${timeAgo(app.created_at)}</div>
+      ${app.notes ? `<div class="row-notes">${escapeHtml(notesShort)}${app.notes.length > 140 ? ` <button class="more-btn" data-action="more">Read more</button>` : ''}</div>` : ''}
+    </div>
+    <div class="bonus-col">
+      <span class="bonus-label">Joining</span>
+      <span class="bonus-amount ${app.joining_type === 'none' ? 'none' : ''}">${formatBonus(app.joining_type, app.joining_min, app.joining_max)}</span>
+    </div>
+    <div class="bonus-col">
+      <span class="bonus-label">Referral</span>
+      <span class="bonus-amount ${app.referral_type === 'none' ? 'none' : ''}">${formatBonus(app.referral_type, app.referral_min, app.referral_max)}</span>
+    </div>
+    <div class="${stats.pct === null ? 'stamp-pct novotes' : 'stamp-pct'}" ${stats.pct !== null ? `style="background:conic-gradient(${pctColor} ${stats.pct * 3.6}deg, var(--line-soft) 0)"` : ''} title="${stats.total} vote(s)">
+      <span>${stats.pct === null ? 'No data' : stats.pct + '%'}</span>
+    </div>
+    <div class="row-actions">
+      <div class="vote-row">
+        <button class="vote-btn working ${myVote === 'working' ? 'active' : ''}" data-action="vote" data-vote="working" title="Mark as working">👍 ${stats.working}</button>
+        <button class="vote-btn not_working ${myVote === 'not_working' ? 'active' : ''}" data-action="vote" data-vote="not_working" title="Mark as not working">👎 ${stats.not_working}</button>
+      </div>
+      <div class="row-links">
+        <button class="link-btn" data-action="track">👥 Track referral${contacts.length ? ` (${contacts.length})` : ''}</button>
+        <button class="link-btn" data-action="copy">📋 Copy invite</button>
+        <button class="link-btn" data-action="report">🚩 Report</button>
+        ${isAdmin ? `
+        <button class="link-btn" data-action="edit">✏️ Edit</button>
+        <button class="link-btn" data-action="verify">${app.verified_by_admin ? '❌ Unverify' : '✅ Verify'}</button>
+        <button class="link-btn danger" data-action="delete">🗑 Delete</button>` : ''}
+      </div>
+    </div>
+  </div>`;
+}
 
-    function toggleAdminModal() {
-      const node = document.getElementById('adminModal');
-      node.classList.toggle('hidden');
-      document.getElementById('adminAuthErrorMessage').classList.add('hidden');
-    }
+function renderLedgerTab() {
+  const all = loadAllContacts();
+  let list = all;
+  if (contactStatusFilter.value) list = list.filter(c => c.status === contactStatusFilter.value);
+  if (contactAppFilter.value) list = list.filter(c => c.app_id === contactAppFilter.value);
 
-    function setBonusType(context, rule) {
-      activeBonusConfiguration[context] = rule;
-      const buttons = document.querySelectorAll(`[id^="btn-${context}-"]`);
-      buttons.forEach(b => {
-        b.className = "bonus-tab flex-1 py-1.5 text-xs font-medium border rounded-lg bg-white shadow-sm border-slate-200 text-slate-700 cursor-pointer";
-      });
-      
-      document.getElementById(`btn-${context}-${rule}`).className = "bonus-tab flex-1 py-1.5 text-xs font-semibold border rounded-lg bg-indigo-600 border-indigo-600 text-white shadow-sm cursor-pointer";
-      
-      document.getElementById(`wrapper-${context}-fixed`).classList.add('hidden');
-      document.getElementById(`wrapper-${context}-range`).classList.add('hidden');
-      
-      if(rule === 'fixed') document.getElementById(`wrapper-${context}-fixed`).classList.remove('hidden');
-      if(rule === 'range') document.getElementById(`wrapper-${context}-range`).classList.remove('hidden');
-    }
-
-    // --- MUTATION ACTIONS (SUPABASE TRANSACTIONS) ---
-    document.getElementById('appSubmitForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const errorNode = document.getElementById('formErrorMessage');
-      errorNode.classList.add('hidden');
-
-      const name = document.getElementById('formAppName').value.trim();
-      const category = document.getElementById('formCategory').value.trim() || null;
-      const notes = document.getElementById('formNotes').value.trim() || null;
-      const addedBy = document.getElementById('formAddedBy').value.trim() || 'Anonymous';
-
-      let joining_min = 0, joining_max = 0;
-      if (activeBonusConfiguration.joining === 'fixed') {
-        joining_min = joining_max = Number(document.getElementById('formJoiningFixed').value) || 0;
-      } else if (activeBonusConfiguration.joining === 'range') {
-        joining_min = Number(document.getElementById('formJoiningMin').value) || 0;
-        joining_max = Number(document.getElementById('formJoiningMax').value) || 0;
-      }
-
-      let referral_min = 0, referral_max = 0;
-      if (activeBonusConfiguration.referral === 'fixed') {
-        referral_min = referral_max = Number(document.getElementById('formReferralFixed').value) || 0;
-      } else if (activeBonusConfiguration.referral === 'range') {
-        referral_min = Number(document.getElementById('formReferralMin').value) || 0;
-        referral_max = Number(document.getElementById('formReferralMax').value) || 0;
-      }
-
-      if (joining_min > joining_max || referral_min > referral_max) {
-        errorNode.innerText = "Error: Logical conflict in boundaries (Minimum cap evaluates larger than maximum boundary).";
-        errorNode.classList.remove('hidden');
-        return;
-      }
-
-      const payload = {
-        name, category, notes, added_by: addedBy,
-        joining_type: activeBonusConfiguration.joining, joining_min, joining_max,
-        referral_type: activeBonusConfiguration.referral, referral_min, referral_max
-      };
-
-      const { error } = await supabase.from('apps').insert([payload]);
-      if (error) {
-        errorNode.innerText = "Transaction Rejected: " + error.message;
-        errorNode.classList.remove('hidden');
-      } else {
-        document.getElementById('appSubmitForm').reset();
-        toggleFormVisibility();
-        setBonusType('joining', 'none');
-        setBonusType('referral', 'none');
-      }
-    });
-
-    async function handleCastVote(appId, selection) {
-      const match = votesDataStore.find(v => v.app_id === appId && v.device_id === activeDeviceId);
-      
-      if(match) {
-        if(match.vote_type === selection) {
-          await supabase.from('votes').delete().eq('id', match.id);
-        } else {
-          await supabase.from('votes').update({ vote_type: selection }).eq('id', match.id);
-        }
-      } else {
-        await supabase.from('votes').insert([{ app_id: appId, device_id: activeDeviceId, vote_type: selection }]);
-      }
-    }
-
-    async function handleFileReport(appId) {
-      const promptText = prompt("Describe what is wrong with this offer (e.g. Expired, Referral Link broken):");
-      if(!promptText || !promptText.trim()) return;
-
-      const { error } = await supabase.from('reports').insert([{ app_id: appId, reason: promptText.trim() }]);
-      if(error) alert("Report failed: " + error.message);
-      else alert("Flagged successfully. The administrator will look into it.");
-    }
-
-    // --- AUTHENTICATED ADMINISTRATIVE PROCEDURES ---
-    async function handleAdminLogin() {
-      const email = document.getElementById('adminEmailInput').value.trim();
-      const secret = document.getElementById('adminPasswordInput').value;
-      const errNode = document.getElementById('adminAuthErrorMessage');
-      
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password: secret });
-      
-      if(error) {
-        errNode.innerText = error.message;
-        errNode.classList.remove('hidden');
-      } else {
-        administrativeSession = data.session;
-        document.getElementById('adminBanner').classList.remove('hidden');
-        toggleAdminModal();
-        renderAppsList();
-      }
-    }
-
-    async function handleAdminLogout() {
-      await supabase.auth.signOut();
-      administrativeSession = null;
-      document.getElementById('adminBanner').classList.add('hidden');
-      renderAppsList();
-    }
-
-    async function toggleVerificationState(appId, currentState) {
-      if(!administrativeSession) return;
-      await supabase.from('apps').update({ verified_by_admin: !currentState }).eq('id', appId);
-    }
-
-    async function purgeApplicationRecord(appId) {
-      if(!administrativeSession || !confirm("Execute structural drop on this record database-wide? All matching metrics cascade.")) return;
-      await supabase.from('apps').delete().eq('id', appId);
-    }
-
-    async function clearAppReports(appId) {
-      if(!administrativeSession) return;
-      await supabase.from('reports').delete().eq('app_id', appId);
-    }
-
-    // --- RENDER PIPELINE ---
-    function formatFinancialToken(type, min, max) {
-      if (type === 'none') return "—";
-      if (type === 'fixed') return `₹${min.toLocaleString('en-IN')}`;
-      return `₹${min.toLocaleString('en-IN')} - ₹${max.toLocaleString('en-IN')}`;
-    }
-
-    function renderAppsList() {
-      const query = document.getElementById('searchInput').value.toLowerCase();
-      const sorting = document.getElementById('sortBySelect').value;
-      const engineNode = document.getElementById('appsContainer');
-      
-      let elements = [...appsDataStore];
-
-      // Filtering Match Logic
-      if(query) {
-        elements = elements.filter(a => 
-          a.name.toLowerCase().includes(query) || 
-          (a.category && a.category.toLowerCase().includes(query))
-        );
-      }
-
-      // Processing Functional Value Maps for Sorting Engine
-      const operationalMap = {};
-      elements.forEach(app => {
-        const matchingVotes = votesDataStore.filter(v => v.app_id === app.id);
-        const upvotes = matchingVotes.filter(v => v.vote_type === 'working').length;
-        const total = matchingVotes.length;
-        operationalMap[app.id] = total === 0 ? -1 : Math.round((upvotes / total) * 100);
-      });
-
-      // Sorting Core
-      if(sorting === 'referral') elements.sort((a,b) => b.referral_max - a.referral_max);
-      else if(sorting === 'joining') elements.sort((a,b) => b.joining_max - a.joining_max);
-      else if(sorting === 'working') elements.sort((a,b) => operationalMap[b.id] - operationalMap[a.id]);
-      else elements.sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
-
-      if(elements.length === 0) {
-        engineNode.innerHTML = `
-          <div class="bg-white border border-slate-200 rounded-2xl text-center py-12 px-4 shadow-xs">
-            <p class="text-sm font-semibold text-slate-700">No active offers index matched your selection.</p>
-            <p class="text-xs text-slate-400 mt-1">Be the contributor to publish live campaigns using the button above.</p>
-          </div>`;
-        return;
-      }
-
-      engineNode.innerHTML = elements.map(app => {
-        const appVotes = votesDataStore.filter(v => v.app_id === app.id);
-        const totalVotes = appVotes.length;
-        const positiveVotes = appVotes.filter(v => v.vote_type === 'working').length;
-        const negativeVotes = totalVotes - positiveVotes;
-        const pct = totalVotes === 0 ? null : Math.round((positiveVotes / totalVotes) * 100);
-        
-        const myRegisteredVote = votesDataStore.find(v => v.app_id === app.id && v.device_id === activeDeviceId)?.vote_type;
-        const associatedReports = reportsDataStore.filter(r => r.app_id === app.id);
-
-        let ratingColorClass = "text-slate-500 border-slate-200 bg-slate-50";
-        if (pct !== null) {
-          if (pct >= 75) ratingColorClass = "text-emerald-700 border-emerald-200 bg-emerald-50";
-          else if (pct >= 45) ratingColorClass = "text-amber-700 border-amber-200 bg-amber-50";
-          else ratingColorClass = "text-rose-700 border-rose-200 bg-rose-50";
-        }
-
-        // Generate Lead List Component for local user reference pipeline
-        const localReferralChitToken = `ledger_contacts_${app.id}`;
-        let localContacts = JSON.parse(localStorage.getItem(localReferralChitToken) || '[]');
-
-        return `
-          <article class="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs relative transition hover:shadow-md">
-            
-            <div class="flex justify-between items-start mb-2">
-              <div>
-                <h3 class="heading-font text-lg font-bold text-slate-900 flex items-center gap-1.5 flex-wrap">
-                  ${app.name}
-                  ${app.verified_by_admin ? `
-                    <span class="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wide uppercase border border-emerald-200 text-emerald-700 bg-emerald-50 shadow-2xs">
-                      ✓ Verified
-                    </span>` : ''}
-                </h3>
-                <p class="text-xs text-slate-400 mt-0.5">
-                  ${app.category ? `<span class="bg-slate-100 text-slate-600 font-medium px-1.5 py-0.5 rounded text-[11px]">${app.category}</span> · ` : ''}
-                  Added by ${app.added_by}
-                </p>
-              </div>
-              
-              ${administrativeSession ? `
-                <div class="flex gap-1">
-                  <button onclick="toggleVerificationState('${app.id}', ${app.verified_by_admin})" class="p-1 text-slate-400 hover:text-indigo-600 border border-slate-100 rounded-lg bg-slate-50 cursor-pointer" title="Toggle Verification">
-                    ⚖
-                  </button>
-                  <button onclick="purgeApplicationRecord('${app.id}')" class="p-1 text-slate-400 hover:text-rose-600 border border-slate-100 rounded-lg bg-slate-50 cursor-pointer" title="Purge Record">
-                    ✕
-                  </button>
-                </div>` : ''}
-            </div>
-
-            <div class="grid grid-cols-2 gap-4 my-3.5 bg-slate-50 p-3 rounded-xl border border-slate-100/50">
-              <div>
-                <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Sign Up Bonus</span>
-                <span class="text-base font-bold text-slate-800 tracking-tight">${formatFinancialToken(app.joining_type, app.joining_min, app.joining_max)}</span>
-              </div>
-              <div>
-                <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Per Referral</span>
-                <span class="text-base font-bold text-slate-800 tracking-tight">${formatFinancialToken(app.referral_type, app.referral_min, app.referral_max)}</span>
-              </div>
-            </div>
-
-            ${app.notes ? `<p class="text-xs text-slate-600 leading-relaxed mb-4 border-l-2 border-indigo-200 pl-2.5 my-2">${app.notes}</p>` : ''}
-
-            <div class="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-3">
-              <div class="flex items-center gap-2">
-                <span class="text-xs font-semibold px-2.5 py-1 border rounded-lg ${ratingColorClass}">
-                  ${pct === null ? 'No data' : `${pct}% Active`}
-                </span>
-                <div class="flex border border-slate-200 rounded-lg overflow-hidden bg-white shadow-2xs">
-                  <button onclick="handleCastVote('${app.id}', 'working')" class="px-2.5 py-1 text-xs font-medium flex items-center gap-1 hover:bg-slate-50 cursor-pointer text-slate-600 ${myRegisteredVote === 'working' ? 'bg-emerald-50 text-emerald-600 font-bold' : ''}">
-                    ▲ <span class="text-[11px]">${positiveVotes}</span>
-                  </button>
-                  <div class="w-px bg-slate-200"></div>
-                  <button onclick="handleCastVote('${app.id}', 'not_working')" class="px-2.5 py-1 text-xs font-medium flex items-center gap-1 hover:bg-slate-50 cursor-pointer text-slate-600 ${myRegisteredVote === 'not_working' ? 'bg-rose-50 text-rose-600 font-bold' : ''}">
-                    ▼ <span class="text-[11px]">${negativeVotes}</span>
-                  </button>
-                </div>
-              </div>
-
-              <div class="flex items-center gap-3">
-                <button onclick="toggleLocalChitPanel('${app.id}')" class="text-xs font-medium text-indigo-600 hover:text-indigo-800 underline underline-offset-2 cursor-pointer">
-                  Referral Manager (${localContacts.length})
-                </button>
-                <button onclick="handleFileReport('${app.id}')" class="text-xs font-medium text-slate-400 hover:text-rose-600 cursor-pointer">
-                  Flag Issue
-                </button>
-              </div>
-            </div>
-
-            ${administrativeSession && associatedReports.length > 0 ? `
-              <div class="mt-3 bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-900">
-                <div class="flex justify-between font-bold border-b border-amber-200 pb-1 mb-1.5">
-                  <span>Pending Issue Tickets (${associatedReports.length})</span>
-                  <button onclick="clearAppReports('${app.id}')" class="underline font-semibold text-amber-700 cursor-pointer">Clear Tickets</button>
-                </div>
-                <ul class="space-y-1 list-disc pl-4 font-mono text-[11px]">
-                  ${associatedReports.map(r => `<li>"${r.reason}"</li>`).join('')}
-                </ul>
-              </div>` : ''}
-
-            <div id="chitPanel-${app.id}" class="hidden mt-4 bg-slate-900 rounded-xl p-3.5 text-slate-200 border-t border-slate-800 transition-all">
-              <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1">
-                ⚙ Local Tracking Canvas <span class="text-[10px] font-normal text-slate-500 lowercase">(Stored strictly inside your browser instance)</span>
-              </h4>
-              <div id="chitList-${app.id}" class="space-y-1.5 max-height-[160px] overflow-y-auto mb-3 pr-1"></div>
-              <div class="flex gap-2">
-                <input type="text" id="chitInput-${app.id}" placeholder="Enter client/friend name..." class="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                <button onclick="addContactToLocalChit('${app.id}')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs rounded-lg px-3 py-1 cursor-pointer">Add</button>
-              </div>
-            </div>
-
-          </article>
-        `;
-      }).join('');
-    }
-
-    // --- PRIVATE CHIT MANAGEMENT SUB-ENGINE ---
-    function toggleLocalChitPanel(appId) {
-      const panel = document.getElementById(`chitPanel-${appId}`);
-      panel.classList.toggle('hidden');
-      if(!panel.classList.contains('hidden')) {
-        renderLocalChitList(appId);
-      }
-    }
-
-    function renderLocalChitList(appId) {
-      const targetNode = document.getElementById(`chitList-${appId}`);
-      const token = `ledger_contacts_${appId}`;
-      let contacts = JSON.parse(localStorage.getItem(token) || '[]');
-
-      if(contacts.length === 0) {
-        targetNode.innerHTML = `<p class="text-[11px] text-slate-500 italic py-1">No local referrals linked yet.</p>`;
-        return;
-      }
-
-      const optionsConfig = [
-        {k: 'to_refer', l: 'To Refer'},
-        {k: 'in_progress', l: 'In Progress'},
-        {k: 'referred', l: 'Referred Successfully'},
-        {k: 'already_user', l: 'Existing User'}
-      ];
-
-      targetNode.innerHTML = contacts.map((c, index) => `
-        <div class="flex items-center justify-between gap-2 text-xs bg-slate-800/60 px-2.5 py-1.5 rounded-lg border border-slate-800">
-          <span class="truncate font-medium text-slate-300 max-w-[150px]">${c.name}</span>
-          <div class="flex items-center gap-1.5">
-            <select onchange="updateLocalChitStatus('${appId}', ${index}, this.value)" class="bg-slate-900 text-slate-300 text-[11px] border border-slate-700 rounded-md px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer">
-              ${optionsConfig.map(o => `<option value="${o.k}" ${c.status === o.k ? 'selected' : ''}>${o.l}</option>`).join('')}
-            </select>
-            <button onclick="removeLocalChitContact('${appId}', ${index})" class="text-slate-500 hover:text-rose-400 px-1 font-bold cursor-pointer" title="Delete">×</button>
-          </div>
+  if (!list.length) { contactEmptyState.hidden = false; contactsTable.innerHTML = ''; return; }
+  contactEmptyState.hidden = true;
+  contactsTable.innerHTML = list.map(c => {
+    const app = appsCache.find(a => a.id === c.app_id);
+    return `
+    <div class="ledger-row" style="grid-template-columns:1fr 170px 70px;">
+      <div class="row-main">
+        <div class="row-name-line">
+          <span class="row-name">${escapeHtml(c.name)}</span>
+          <span class="badge badge-category">${app ? escapeHtml(app.name) : 'Deleted app'}</span>
+          <span class="status-pill status-${c.status}">${statusLabel(c.status)}</span>
         </div>
-      `).join('');
-    }
+        ${c.note ? `<div class="row-notes">${escapeHtml(c.note)}</div>` : ''}
+        <div class="row-meta">Added ${timeAgo(c.created_at)}</div>
+      </div>
+      <div><select class="contact-status-select" data-id="${c.id}" aria-label="Change status">
+        ${['to_refer', 'in_progress', 'referred', 'already_user'].map(s => `<option value="${s}" ${s === c.status ? 'selected' : ''}>${statusLabel(s)}</option>`).join('')}
+      </select></div>
+      <div class="row-links"><button class="link-btn danger" data-del-contact="${c.id}">🗑</button></div>
+    </div>`;
+  }).join('');
+}
 
-    function addContactToLocalChit(appId) {
-      const input = document.getElementById(`chitInput-${appId}`);
-      const name = input.value.trim();
-      if(!name) return;
+function renderReportsList() {
+  if (!reportsCache.length) { reportsEmptyState.hidden = false; reportsList.innerHTML = ''; return; }
+  reportsEmptyState.hidden = true;
+  reportsList.innerHTML = reportsCache.map(r => {
+    const app = appsCache.find(a => a.id === r.app_id);
+    return `
+    <div class="ledger-row" style="grid-template-columns:1fr auto;">
+      <div class="row-main">
+        <div class="row-name-line"><span class="row-name">${app ? escapeHtml(app.name) : 'Unknown app (deleted)'}</span></div>
+        <div class="row-notes">${escapeHtml(r.reason)}</div>
+        <div class="row-meta">${timeAgo(r.created_at)}</div>
+      </div>
+      <div class="row-links">
+        <button class="link-btn" data-report-action="dismiss" data-id="${r.id}">✔️ Dismiss</button>
+        ${app ? `<button class="link-btn danger" data-report-action="deleteapp" data-id="${app.id}">🗑 Delete app</button>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
 
-      const token = `ledger_contacts_${appId}`;
-      let contacts = JSON.parse(localStorage.getItem(token) || '[]');
-      contacts.push({ name, status: 'to_refer' });
-      localStorage.setItem(token, JSON.stringify(contacts));
-      
-      input.value = '';
-      renderLocalChitList(appId);
-      renderAppsList();
-      document.getElementById(`chitPanel-${appId}`).classList.remove('hidden');
-    }
+/* ============================================================
+   7. DATA FETCHING
+   ============================================================ */
+async function fetchApps() {
+  const { data, error } = await sb.from('apps').select('*').order('created_at', { ascending: false });
+  if (error) { toast('Failed to load apps: ' + error.message, 'error'); return; }
+  appsCache = data || [];
+  renderCategoryOptions();
+}
+async function fetchVotes() {
+  const { data, error } = await sb.from('votes').select('app_id, device_id, vote_type');
+  if (error) { toast('Failed to load votes: ' + error.message, 'error'); return; }
+  votesAgg = {}; myVotes = {};
+  (data || []).forEach(v => {
+    if (!votesAgg[v.app_id]) votesAgg[v.app_id] = { working: 0, not_working: 0 };
+    votesAgg[v.app_id][v.vote_type]++;
+    if (v.device_id === deviceId) myVotes[v.app_id] = v.vote_type;
+  });
+}
+async function refreshReports() {
+  try {
+    const { data, error } = await sb.from('reports').select('*').order('created_at', { ascending: false });
+    if (error) throw error;
+    reportsCache = data || [];
+    reportsBadge.hidden = reportsCache.length === 0;
+    reportsBadge.textContent = reportsCache.length;
+    renderReportsList();
+  } catch (err) { console.error(err); }
+}
+async function loadAll() {
+  loadingState.hidden = false; appsList.hidden = true; emptyState.hidden = true;
+  await Promise.all([fetchApps(), fetchVotes()]);
+  loadingState.hidden = true;
+  renderApps(); renderStats();
+}
 
-    function updateLocalChitStatus(appId, index, newStatus) {
-      const token = `ledger_contacts_${appId}`;
-      let contacts = JSON.parse(localStorage.getItem(token) || '[]');
-      if(contacts[index]) contacts[index].status = newStatus;
-      localStorage.setItem(token, JSON.stringify(contacts));
-      renderLocalChitList(appId);
-    }
+/* ============================================================
+   8. VOTING
+   ============================================================ */
+async function castVote(appId, voteType) {
+  try {
+    const { error } = await sb.from('votes').upsert(
+      { app_id: appId, device_id: deviceId, vote_type: voteType },
+      { onConflict: 'app_id,device_id' }
+    );
+    if (error) throw error;
+    myVotes[appId] = voteType;
+    await fetchVotes();
+    renderApps(); renderStats();
+    toast('Thanks for voting!', 'success');
+  } catch (err) { toast('Could not save vote: ' + err.message, 'error'); }
+}
 
-    function removeLocalChitContact(appId, index) {
-      const token = `ledger_contacts_${appId}`;
-      let contacts = JSON.parse(localStorage.getItem(token) || '[]');
-      contacts.splice(index, 1);
-      localStorage.setItem(token, JSON.stringify(contacts));
-      renderLocalChitList(appId);
-      renderAppsList();
-      document.getElementById(`chitPanel-${appId}`).classList.remove('hidden');
+/* ============================================================
+   9. ADD / EDIT APP
+   ============================================================ */
+function wireBonusToggle(name, fixedRowId, rangeRowId) {
+  document.querySelectorAll(`input[name="${name}"]`).forEach(r => r.addEventListener('change', () => {
+    const val = document.querySelector(`input[name="${name}"]:checked`).value;
+    $(fixedRowId).hidden = val !== 'fixed';
+    $(rangeRowId).hidden = val !== 'range';
+  }));
+}
+wireBonusToggle('joiningType', 'joinFixedRow', 'joinRangeRow');
+wireBonusToggle('referralType', 'refFixedRow', 'refRangeRow');
+
+function openAddModal() {
+  addAppForm.reset();
+  editAppId.value = '';
+  addAppTitle.textContent = '＋ Add an app';
+  addAppSubmitBtn.textContent = 'Add app';
+  joinFixedRow.hidden = true; joinRangeRow.hidden = true;
+  refFixedRow.hidden = true; refRangeRow.hidden = true;
+  openModal('addAppModalBackdrop');
+}
+function openEditModal(app) {
+  addAppForm.reset();
+  editAppId.value = app.id;
+  f_name.value = app.name;
+  f_category.value = app.category || '';
+
+  document.querySelector(`input[name="joiningType"][value="${app.joining_type}"]`).checked = true;
+  f_joinFixed.value = app.joining_type === 'fixed' ? app.joining_min : '';
+  f_joinMin.value = app.joining_min ?? ''; f_joinMax.value = app.joining_max ?? '';
+  joinFixedRow.hidden = app.joining_type !== 'fixed'; joinRangeRow.hidden = app.joining_type !== 'range';
+
+  document.querySelector(`input[name="referralType"][value="${app.referral_type}"]`).checked = true;
+  f_refFixed.value = app.referral_type === 'fixed' ? app.referral_min : '';
+  f_refMin.value = app.referral_min ?? ''; f_refMax.value = app.referral_max ?? '';
+  refFixedRow.hidden = app.referral_type !== 'fixed'; refRangeRow.hidden = app.referral_type !== 'range';
+
+  f_notes.value = app.notes || '';
+  f_addedBy.value = app.added_by || '';
+  addAppTitle.textContent = '✏️ Edit app';
+  addAppSubmitBtn.textContent = 'Save changes';
+  openModal('addAppModalBackdrop');
+}
+
+addAppForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const name = f_name.value.trim();
+  if (!name) return;
+
+  const joiningType = document.querySelector('input[name="joiningType"]:checked').value;
+  const referralType = document.querySelector('input[name="referralType"]:checked').value;
+  let joining_min = 0, joining_max = 0, referral_min = 0, referral_max = 0;
+
+  if (joiningType === 'fixed') { joining_min = joining_max = Number(f_joinFixed.value) || 0; }
+  else if (joiningType === 'range') {
+    joining_min = Number(f_joinMin.value) || 0; joining_max = Number(f_joinMax.value) || 0;
+    if (joining_max < joining_min) { toast('Joining max must be ≥ min', 'error'); return; }
+  }
+  if (referralType === 'fixed') { referral_min = referral_max = Number(f_refFixed.value) || 0; }
+  else if (referralType === 'range') {
+    referral_min = Number(f_refMin.value) || 0; referral_max = Number(f_refMax.value) || 0;
+    if (referral_max < referral_min) { toast('Referral max must be ≥ min', 'error'); return; }
+  }
+
+  const payload = {
+    name, category: f_category.value.trim() || null,
+    joining_type: joiningType, joining_min, joining_max,
+    referral_type: referralType, referral_min, referral_max,
+    notes: f_notes.value.trim() || null,
+    added_by: f_addedBy.value.trim() || 'Anonymous'
+  };
+
+  try {
+    addAppSubmitBtn.disabled = true;
+    if (editAppId.value) {
+      const { error } = await sb.from('apps').update(payload).eq('id', editAppId.value);
+      if (error) throw error;
+      toast('App updated', 'success');
+    } else {
+      const { error } = await sb.from('apps').insert(payload);
+      if (error) throw error;
+      toast('App added — thank you!', 'success');
     }
-  </script>
+    closeModal('addAppModalBackdrop');
+    await fetchApps(); renderApps(); renderStats();
+  } catch (err) { toast('Save failed: ' + err.message, 'error'); }
+  finally { addAppSubmitBtn.disabled = false; }
+});
+
+/* ============================================================
+   10. REPORTING
+   ============================================================ */
+function openReportModal(app) {
+  reportAppId.value = app.id;
+  reportAppName.textContent = `Reporting: ${app.name}`;
+  reportReason.value = '';
+  openModal('reportModalBackdrop');
+}
+reportForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  try {
+    const { error } = await sb.from('reports').insert({ app_id: reportAppId.value, reason: reportReason.value.trim() });
+    if (error) throw error;
+    toast('Report submitted — thanks for flagging this', 'success');
+    closeModal('reportModalBackdrop');
+    if (isAdmin) await refreshReports();
+  } catch (err) { toast('Could not submit report: ' + err.message, 'error'); }
+});
+
+/* ============================================================
+   11. ADMIN AUTH
+   ============================================================ */
+function setAdminState(loggedIn) {
+  isAdmin = loggedIn;
+  adminBar.hidden = !loggedIn;
+  adminLoginBtn.hidden = loggedIn;
+  if (loggedIn) { refreshReports(); }
+  else { reportsPanel.hidden = true; showPanel('apps'); }
+  renderApps();
+}
+
+adminLoginBtn.addEventListener('click', () => openModal('adminLoginModalBackdrop'));
+adminLoginForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  try {
+    const { error } = await sb.auth.signInWithPassword({ email: adminEmail.value.trim(), password: adminPassword.value });
+    if (error) throw error;
+    toast('Signed in as admin', 'success');
+    closeModal('adminLoginModalBackdrop');
+    adminLoginForm.reset();
+  } catch (err) { toast('Sign-in failed: ' + err.message, 'error'); }
+});
+adminLogoutBtn.addEventListener('click', async () => {
+  await sb.auth.signOut();
+  toast('Signed out', 'success');
+});
+
+/* ============================================================
+   12. ADMIN ACTIONS
+   ============================================================ */
+async function toggleVerify(app) {
+  try {
+    const { error } = await sb.from('apps').update({ verified_by_admin: !app.verified_by_admin }).eq('id', app.id);
+    if (error) throw error;
+    toast(app.verified_by_admin ? 'App unverified' : 'App verified ✅', 'success');
+    await fetchApps(); renderApps(); renderStats();
+  } catch (err) { toast('Action failed: ' + err.message, 'error'); }
+}
+async function deleteApp(app) {
+  const ok = await confirmAction(`Delete "${app.name}"? This also removes its votes and reports. This cannot be undone.`);
+  if (!ok) return;
+  try {
+    const { error } = await sb.from('apps').delete().eq('id', app.id);
+    if (error) throw error;
+    toast('App deleted', 'success');
+    await fetchApps(); await fetchVotes(); renderApps(); renderStats();
+    if (isAdmin) refreshReports();
+  } catch (err) { toast('Delete failed: ' + err.message, 'error'); }
+}
+
+reportsList.addEventListener('click', async (e) => {
+  const btn = e.target.closest('[data-report-action]'); if (!btn) return;
+  const id = btn.dataset.id;
+  if (btn.dataset.reportAction === 'dismiss') {
+    try { const { error } = await sb.from('reports').delete().eq('id', id); if (error) throw error; toast('Report dismissed', 'success'); refreshReports(); }
+    catch (err) { toast(err.message, 'error'); }
+  } else if (btn.dataset.reportAction === 'deleteapp') {
+    const app = appsCache.find(a => a.id === id);
+    if (app) await deleteApp(app);
+    refreshReports();
+  }
+});
+
+/* ============================================================
+   13. REFERRAL TRACKER LINK + INVITE COPY
+   ============================================================ */
+function trackReferral(app) {
+  showPanel('ledger');
+  contactApp.value = app.id;
+  contactAppFilter.value = app.id;
+  renderLedgerTab();
+  contactName.focus();
+}
+function copyInvite(app) {
+  const joining = formatBonus(app.joining_type, app.joining_min, app.joining_max);
+  const referral = formatBonus(app.referral_type, app.referral_min, app.referral_max);
+  let msg = `Hey! I'm using ${app.name} — `;
+  if (app.referral_type !== 'none') msg += `you get a referral bonus (${referral}) if you sign up with my code/link. `;
+  if (app.joining_type !== 'none') msg += `Plus there's a joining bonus too (${joining}). `;
+  msg += `Ping me and I'll send the link!`;
+  navigator.clipboard.writeText(msg)
+    .then(() => toast('Invite message copied to clipboard', 'success'))
+    .catch(() => toast('Could not copy — clipboard blocked', 'error'));
+}
+
+/* ============================================================
+   14. EVENT DELEGATION — apps list
+   ============================================================ */
+appsList.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-action]'); if (!btn) return;
+  const row = btn.closest('.ledger-row');
+  const appId = row.dataset.appId;
+  const app = appsCache.find(a => a.id === appId);
+  if (!app) return;
+  switch (btn.dataset.action) {
+    case 'vote': castVote(appId, btn.dataset.vote); break;
+    case 'report': openReportModal(app); break;
+    case 'track': trackReferral(app); break;
+    case 'copy': copyInvite(app); break;
+    case 'edit': openEditModal(app); break;
+    case 'verify': toggleVerify(app); break;
+    case 'delete': deleteApp(app); break;
+    case 'more': {
+      const notesEl = row.querySelector('.row-notes');
+      notesEl.innerHTML = escapeHtml(app.notes) + ' <button class="more-btn" data-action="less">Show less</button>';
+      break;
+    }
+    case 'less': {
+      const notesEl = row.querySelector('.row-notes');
+      notesEl.innerHTML = escapeHtml(truncate(app.notes, 140)) + ' <button class="more-btn" data-action="more">Read more</button>';
+      break;
+    }
+  }
+});
+
+/* ============================================================
+   15. REFERRAL TRACKER TAB — events
+   ============================================================ */
+contactForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+  if (!contactApp.value) { toast('Add an app first, then come back here', 'error'); return; }
+  addContactEntry({
+    app_id: contactApp.value,
+    name: contactName.value.trim(),
+    status: contactStatus.value,
+    note: contactNote.value.trim()
+  });
+  contactName.value = ''; contactNote.value = ''; contactStatus.value = 'to_refer';
+  renderLedgerTab(); renderApps();
+  toast('Contact added to your tracker', 'success');
+});
+contactStatusFilter.addEventListener('change', renderLedgerTab);
+contactAppFilter.addEventListener('change', renderLedgerTab);
+contactsTable.addEventListener('change', (e) => {
+  if (e.target.classList.contains('contact-status-select')) {
+    updateContactEntry(e.target.dataset.id, { status: e.target.value });
+    renderLedgerTab();
+  }
+});
+contactsTable.addEventListener('click', (e) => {
+  const id = e.target.closest('[data-del-contact]')?.dataset.delContact;
+  if (id) { deleteContactEntry(id); renderLedgerTab(); renderApps(); }
+});
+
+/* ============================================================
+   16. TABS / PANELS
+   ============================================================ */
+function showPanel(name) {
+  appsPanel.hidden = name !== 'apps';
+  ledgerPanel.hidden = name !== 'ledger';
+  reportsPanel.hidden = name !== 'reports';
+  tabApps.classList.toggle('active', name === 'apps');
+  tabLedger.classList.toggle('active', name === 'ledger');
+  tabApps.setAttribute('aria-selected', name === 'apps');
+  tabLedger.setAttribute('aria-selected', name === 'ledger');
+  if (name === 'ledger') renderLedgerTab();
+}
+tabApps.addEventListener('click', () => showPanel('apps'));
+tabLedger.addEventListener('click', () => showPanel('ledger'));
+viewReportsBtn.addEventListener('click', () => showPanel('reports'));
+
+/* ============================================================
+   17. CONTROLS WIRING
+   ============================================================ */
+searchInput.addEventListener('input', debounce(renderApps, 200));
+categoryFilter.addEventListener('change', renderApps);
+sortSelect.addEventListener('change', renderApps);
+verifiedOnlyCheckbox.addEventListener('change', renderApps);
+addAppBtn.addEventListener('click', openAddModal);
+emptyAddBtn.addEventListener('click', openAddModal);
+
+/* ============================================================
+   18. MODAL CHROME (close buttons, backdrop click, ESC)
+   ============================================================ */
+document.querySelectorAll('[data-close]').forEach(btn => btn.addEventListener('click', () => closeModal(btn.dataset.close)));
+document.querySelectorAll('.modal-backdrop').forEach(bd => bd.addEventListener('click', (e) => { if (e.target === bd) bd.hidden = true; }));
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') document.querySelectorAll('.modal-backdrop').forEach(bd => bd.hidden = true); });
+
+/* ============================================================
+   19. THEME TOGGLE
+   ============================================================ */
+const savedTheme = localStorage.getItem('upi_theme');
+if (savedTheme) { document.body.dataset.theme = savedTheme; themeToggle.textContent = savedTheme === 'dark' ? '☀️' : '🌙'; }
+themeToggle.addEventListener('click', () => {
+  const next = document.body.dataset.theme === 'dark' ? 'light' : 'dark';
+  document.body.dataset.theme = next;
+  localStorage.setItem('upi_theme', next);
+  themeToggle.textContent = next === 'dark' ? '☀️' : '🌙';
+});
+
+/* ============================================================
+   20. REALTIME
+   ============================================================ */
+function subscribeRealtime() {
+  sb.channel('public:apps')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'apps' }, async () => { await fetchApps(); renderApps(); renderStats(); if (isAdmin) refreshReports(); })
+    .subscribe();
+  sb.channel('public:votes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'votes' }, async () => { await fetchVotes(); renderApps(); renderStats(); })
+    .subscribe();
+  sb.channel('public:reports')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'reports' }, () => { if (isAdmin) refreshReports(); })
+    .subscribe();
+}
+
+/* ============================================================
+   21. INIT
+   ============================================================ */
+async function init() {
+  if (!isConfigured) {
+    connBanner.hidden = false;
+    loadingState.hidden = true;
+    emptyState.hidden = false;
+    emptyState.querySelector('p').textContent = '⚠️ Connect your Supabase project to start using the ledger (see banner above).';
+    emptyAddBtn.hidden = true;
+    return;
+  }
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    setAdminState(!!session);
+  } catch (e) { console.warn(e); }
+  sb.auth.onAuthStateChange((_event, session) => setAdminState(!!session));
+  await loadAll();
+  subscribeRealtime();
+}
+document.addEventListener('DOMContentLoaded', init);
+</script>
 </body>
 </html>
