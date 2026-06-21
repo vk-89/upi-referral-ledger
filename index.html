@@ -16,6 +16,7 @@
     --green:#1F7A4D; --green-deep:#145C39; --green-soft:#DDF1E3;
     --gold:#C8932E; --gold-soft:#F6E9CC;
     --stamp:#B4472D; --stamp-soft:#F6DFD7;
+    --blue:#33588F; --blue-soft:#DDE6F6;
     --line:#DAD3BF; --line-soft:#E8E3D3;
     --radius:14px; --radius-sm:8px;
     --shadow:0 4px 18px rgba(27,42,46,0.08);
@@ -30,6 +31,7 @@
     --green:#3FCB81; --green-deep:#2E9C63; --green-soft:#1E332A;
     --gold:#E0B458; --gold-soft:#332B17;
     --stamp:#E07457; --stamp-soft:#3A2420;
+    --blue:#7FA6E0; --blue-soft:#1C2A3A;
     --line:#33433F; --line-soft:#283733;
     --shadow:0 4px 18px rgba(0,0,0,0.35);
     --shadow-lg:0 16px 40px rgba(0,0,0,0.5);
@@ -153,6 +155,21 @@
   .badge-new{ background:var(--gold-soft); color:var(--gold); }
   .badge-category{ background:var(--paper-alt); color:var(--ink-soft); }
   .badge-top{ background:var(--gold); color:#2b2106; }
+
+  /* ===== APP ICON (admin-settable, falls back to a generated letter avatar) ===== */
+  .app-icon-wrap{ display:inline-flex; flex-shrink:0; }
+  .app-icon{
+    width:28px; height:28px; border-radius:8px; object-fit:cover; flex-shrink:0;
+    display:inline-flex; align-items:center; justify-content:center;
+    font-family:var(--font-display); font-weight:700; font-size:12px; color:#fff;
+    background:var(--green); line-height:1;
+  }
+  .app-icon.lg{ width:44px; height:44px; border-radius:11px; font-size:16px; }
+  .app-icon.sm{ width:22px; height:22px; border-radius:6px; font-size:10px; }
+  .app-icon.xs{ width:18px; height:18px; border-radius:5px; font-size:9px; }
+  .icon-preview-row{ display:flex; align-items:center; gap:10px; margin-top:-4px; }
+  .icon-preview-row span.hint{ font-size:12px; color:var(--ink-soft); font-weight:400; }
+
   .row-meta{ font-size:12px; color:var(--ink-faint); margin-top:3px; }
   .row-notes{ font-size:13px; color:var(--ink-soft); margin-top:6px; max-width:560px; }
   .row-notes .more-btn{ background:none; border:none; color:var(--green-deep); font-weight:600; cursor:pointer; font-size:12.5px; padding:0; margin-left:4px;}
@@ -203,30 +220,92 @@
   .amount-row label{ flex:1; min-width:110px; font-size:12.5px; color:var(--ink-soft); display:flex; flex-direction:column; gap:4px;}
   .amount-row input{ padding:8px 10px; border-radius:8px; border:1.5px solid var(--line); font-family:var(--font-mono); background:var(--paper-raised); color:var(--ink);}
 
-  /* ===== CONTACT FORM (ledger tab) ===== */
-  .contact-form{ display:flex; flex-wrap:wrap; gap:10px; margin-bottom:14px; }
-  .contact-form select, .contact-form input{ font-family:var(--font-body); padding:10px 12px; border-radius:10px; border:1.5px solid var(--line); background:var(--paper-raised); color:var(--ink); font-size:14px; }
-  .contact-form #contactName{ flex:1 1 160px; }
-  .contact-form #contactNote{ flex:1 1 160px; }
+  /* ===== REFERRAL MATRIX (ledger tab) ===== */
   .ledger-intro h2{ font-family:var(--font-display); margin:0 0 4px; }
   .ledger-intro p{ color:var(--ink-soft); font-size:14px; margin:0 0 18px; }
 
-  .status-pill{ font-size:11.5px; font-weight:600; padding:3px 10px; border-radius:20px; }
-  .status-to_refer{ background:var(--paper-alt); color:var(--ink-soft); }
-  .status-in_progress{ background:var(--gold-soft); color:var(--gold); }
-  .status-referred{ background:#dde6f6; color:#33588f; }
-  [data-theme="dark"] .status-referred{ background:#1c2a3a; color:#7fa6e0; }
-  .status-already_user{ background:var(--green-soft); color:var(--green-deep); }
+  .matrix-toolbar{ display:flex; flex-wrap:wrap; gap:10px; margin-bottom:14px; }
+  .matrix-toolbar input{
+    font-family:var(--font-body); padding:10px 12px; border-radius:10px; border:1.5px solid var(--line);
+    background:var(--paper-raised); color:var(--ink); font-size:14px; flex:1 1 170px; min-width:140px;
+  }
+  .matrix-toolbar .primary-btn{ flex:0 0 auto; }
+
+  .matrix-legend{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
+  .legend-chip{ font-size:11.5px; font-weight:600; padding:4px 10px; border-radius:20px; border:1px solid transparent; white-space:nowrap; }
+
+  /* Cell state colours — reused by legend chips + grid cells */
+  .cell-empty{ background:var(--paper-alt); color:var(--ink-faint); }
+  .cell-in_progress{ background:var(--gold-soft); color:var(--gold); }
+  .cell-referred{ background:var(--green-soft); color:var(--green-deep); }
+  .cell-already_user{ background:var(--blue-soft); color:var(--blue); }
+  .cell-referred_by_them{ background:var(--stamp-soft); color:var(--stamp); }
+
+  .matrix-wrap{ background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; }
+  .matrix-scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  .matrix-table{ border-collapse:separate; border-spacing:0; width:100%; }
+  .matrix-table th, .matrix-table td{ border-bottom:1px dashed var(--line); border-right:1px dashed var(--line); padding:0; }
+  .matrix-table thead th{ background:var(--paper-alt); padding:8px 4px 10px; vertical-align:bottom; }
+  .matrix-corner{
+    position:sticky; left:0; z-index:3; background:var(--paper-alt);
+    min-width:140px; text-align:left; padding:8px 12px !important; font-size:11.5px; color:var(--ink-soft); font-weight:600;
+  }
+  .matrix-app-head{ min-width:62px; max-width:62px; text-align:center; transition:background .3s ease; }
+  .matrix-app-head .app-icon-wrap{ margin:0 auto 4px; }
+  .matrix-app-head .app-head-name{
+    font-size:9.5px; line-height:1.15; color:var(--ink-soft); display:block;
+    max-height:24px; overflow:hidden; word-break:break-word; padding:0 2px;
+  }
+  .matrix-app-head.col-flash{ background:var(--green-soft); }
+  .matrix-total-head{ min-width:74px; }
+
+  .matrix-friend-cell{
+    position:sticky; left:0; z-index:1; background:var(--paper-raised);
+    min-width:140px; max-width:170px; padding:9px 10px;
+  }
+  .matrix-row:hover td, .matrix-row:hover .matrix-friend-cell{ background:var(--paper-alt); }
+  .matrix-friend-name{ font-family:var(--font-display); font-weight:700; font-size:13.5px; display:flex; justify-content:space-between; align-items:center; gap:6px; }
+  .friend-del-btn{ background:none; border:none; color:var(--ink-faint); cursor:pointer; font-size:13px; padding:2px; flex-shrink:0; border-radius:5px; }
+  .friend-del-btn:hover{ color:var(--stamp); background:var(--stamp-soft); }
+
+  .matrix-cell-btn{
+    width:100%; height:56px; border:none; background:none; cursor:pointer; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:1px; font-family:var(--font-mono); padding:3px;
+  }
+  .matrix-cell-btn:hover{ filter:brightness(.96); }
+  [data-theme="dark"] .matrix-cell-btn:hover{ filter:brightness(1.15); }
+  .matrix-cell-btn .cell-emoji{ font-size:15px; line-height:1; }
+  .matrix-cell-btn .cell-money{ font-size:9px; font-weight:700; line-height:1.15; white-space:nowrap; }
+  .matrix-cell-btn .cell-money.received{ color:var(--green-deep); }
+  [data-theme="dark"] .matrix-cell-btn .cell-money.received{ color:var(--green); }
+  .matrix-cell-btn .cell-money.pending{ color:var(--stamp); }
+
+  .matrix-total-row td, .matrix-total-row th{ background:var(--paper-alt); font-weight:700; border-top:1.5px solid var(--line); }
+  .matrix-total-cell{ text-align:center; font-family:var(--font-mono); font-size:10.5px; padding:8px 4px; line-height:1.4; }
+  .matrix-friend-total{ font-family:var(--font-mono); font-size:11px; text-align:center; padding:6px 8px; color:var(--ink-soft); line-height:1.4; }
+
+  .matrix-summary{ display:flex; gap:12px; flex-wrap:wrap; margin-top:14px; }
+  .summary-card{ background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius-sm); padding:12px 18px; box-shadow:var(--shadow); flex:1 1 140px; text-align:center; }
+  .summary-card .num{ display:block; font-family:var(--font-mono); font-weight:700; font-size:18px; color:var(--green-deep); }
+  [data-theme="dark"] .summary-card .num{ color:var(--green); }
+  .summary-card .lbl{ font-size:11px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.3px; }
+
+  @media (max-width:680px){
+    .matrix-toolbar input{ flex:1 1 100%; }
+    .matrix-corner, .matrix-friend-cell{ min-width:110px; max-width:130px; }
+  }
 
   /* ===== MODALS ===== */
   .modal-backdrop{
     position:fixed; inset:0; background:rgba(15,20,20,.55); display:flex; align-items:center; justify-content:center;
     padding:20px; z-index:100; backdrop-filter:blur(2px);
   }
-  /* FIX: Ensure that layout displays flex only when NOT hidden */
+  
+  /* FIX: Forces elements with the hidden attribute to obey display: none */
   .modal-backdrop[hidden] {
-    display: none;
+    display: none !important;
   }
+
   .modal-card{
     background:var(--paper-raised); border-radius:18px; max-width:520px; width:100%; max-height:88vh; overflow-y:auto;
     box-shadow:var(--shadow-lg); padding:22px 24px; animation:slideUp .25s ease both; border:1px solid var(--line);
@@ -312,7 +391,7 @@
 
   <div class="tabs" role="tablist">
     <button class="tab-btn active" id="tabApps" role="tab" aria-selected="true">📒 Browse apps</button>
-    <button class="tab-btn" id="tabLedger" role="tab" aria-selected="false">👥 My referral tracker</button>
+    <button class="tab-btn" id="tabLedger" role="tab" aria-selected="false">👥 Referral matrix</button>
   </div>
 
   <section id="appsPanel" class="tab-panel">
@@ -350,39 +429,39 @@
 
   <section id="ledgerPanel" class="tab-panel" hidden>
     <div class="ledger-intro">
-      <h2>Your personal referral tracker</h2>
-      <p>Keep a private list of who you've referred to which app, and where each one stands. This list is saved only in <strong>this browser</strong> — nobody else can see it.</p>
+      <h2>👥 Referral matrix</h2>
+      <p>Every app you've listed is already a column here — just add friends as rows and tap a cell to mark progress. Saved only in <strong>this browser</strong>; nobody else can see it.</p>
     </div>
 
-    <form id="contactForm" class="contact-form">
-      <select id="contactApp" required aria-label="App"></select>
-      <input id="contactName" type="text" placeholder="Contact's name" required maxlength="60">
-      <select id="contactStatus" aria-label="Status">
-        <option value="to_refer">📋 To refer</option>
-        <option value="in_progress">⏳ In progress</option>
-        <option value="referred">📨 Referred — pending</option>
-        <option value="already_user">✅ Already a user</option>
-      </select>
-      <input id="contactNote" type="text" placeholder="Note (optional)" maxlength="120">
-      <button type="submit" class="primary-btn">＋ Add</button>
-    </form>
-
-    <div class="controls-bar">
-      <select id="contactStatusFilter" aria-label="Filter by status">
-        <option value="">All statuses</option>
-        <option value="to_refer">📋 To refer</option>
-        <option value="in_progress">⏳ In progress</option>
-        <option value="referred">📨 Referred — pending</option>
-        <option value="already_user">✅ Already a user</option>
-      </select>
-      <select id="contactAppFilter" aria-label="Filter by app"><option value="">All apps</option></select>
+    <div class="matrix-toolbar">
+      <input id="friendSearch" type="search" placeholder="🔍 Search friends…" aria-label="Search friends">
+      <input id="appSearchMatrix" type="search" placeholder="🔍 Search apps…" aria-label="Search apps">
+      <button id="addFriendBtn" class="primary-btn">＋ Add friend</button>
     </div>
 
-    <div id="contactEmptyState" class="empty-state" hidden>
-      <p>👋 No contacts yet. Add the first person above.</p>
+    <div class="matrix-legend">
+      <span class="legend-chip cell-empty">⬜ Not started</span>
+      <span class="legend-chip cell-in_progress">⏳ In progress</span>
+      <span class="legend-chip cell-referred">✅ Already referred</span>
+      <span class="legend-chip cell-already_user">👤 Already a user</span>
+      <span class="legend-chip cell-referred_by_them">🔁 Referred by them</span>
     </div>
 
-    <div id="contactsTable" class="ledger-list"></div>
+    <div id="matrixNoAppsState" class="empty-state" hidden>
+      <p>📭 No apps listed yet. Add an app in the <strong>Browse apps</strong> tab first, then come back here.</p>
+    </div>
+    <div id="matrixEmptyState" class="empty-state" hidden>
+      <p>👋 No friends yet. Add your first friend to start the grid.</p>
+      <button class="primary-btn" id="emptyAddFriendBtn">＋ Add a friend</button>
+    </div>
+
+    <div class="matrix-wrap" id="matrixWrap" hidden>
+      <div class="matrix-scroll" id="matrixScroll">
+        <table class="matrix-table" id="matrixTable"></table>
+      </div>
+    </div>
+
+    <div class="matrix-summary" id="matrixSummary" hidden></div>
   </section>
 
   <section id="reportsPanel" class="tab-panel" hidden>
@@ -427,6 +506,13 @@
           <option value="Other">
         </datalist>
       </label>
+      <label>App icon URL (optional)
+        <input id="f_icon" type="text" placeholder="https://example.com/logo.png">
+      </label>
+      <div class="icon-preview-row">
+        <span id="iconPreview"></span>
+        <span class="hint">Preview — leave blank to use an auto-generated icon</span>
+      </div>
 
       <fieldset class="bonus-fieldset">
         <legend>Joining bonus (for new sign-ups)</legend>
@@ -489,6 +575,58 @@
       <div class="modal-actions">
         <button type="button" class="ghost-btn" data-close="reportModalBackdrop">Cancel</button>
         <button type="submit" class="primary-btn">Submit report</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="addFriendModalBackdrop" hidden>
+  <div class="modal-card modal-card-sm" role="dialog" aria-modal="true" aria-labelledby="addFriendTitle">
+    <div class="modal-head">
+      <h3 id="addFriendTitle">＋ Add a friend</h3>
+      <button class="icon-btn" data-close="addFriendModalBackdrop" aria-label="Close">✕</button>
+    </div>
+    <form id="addFriendForm" class="modal-form">
+      <label>Friend's name
+        <input id="addFriendNameInput" type="text" required maxlength="60" placeholder="e.g. Rohit">
+      </label>
+      <div class="modal-actions">
+        <button type="button" class="ghost-btn" data-close="addFriendModalBackdrop">Cancel</button>
+        <button type="submit" class="primary-btn">Add to grid</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="cellModalBackdrop" hidden>
+  <div class="modal-card modal-card-sm" role="dialog" aria-modal="true" aria-labelledby="cellModalTitle">
+    <div class="modal-head">
+      <h3 id="cellModalTitle">Update status</h3>
+      <button class="icon-btn" data-close="cellModalBackdrop" aria-label="Close">✕</button>
+    </div>
+    <form id="cellForm" class="modal-form">
+      <input type="hidden" id="cellFriendId">
+      <input type="hidden" id="cellAppId">
+      <p class="modal-sub" id="cellModalSub"></p>
+      <label>Status
+        <select id="cellStatus">
+          <option value="">⬜ Not started / clear this cell</option>
+          <option value="in_progress">⏳ In progress</option>
+          <option value="referred">✅ Already referred</option>
+          <option value="already_user">👤 Already a user</option>
+          <option value="referred_by_them">🔁 Referred by them</option>
+        </select>
+      </label>
+      <div class="amount-row">
+        <label>Received (₹)<input id="cellReceived" type="number" min="0" step="1"></label>
+        <label>Yet to receive (₹)<input id="cellPending" type="number" min="0" step="1"></label>
+      </div>
+      <label>Note (optional)
+        <input id="cellNote" type="text" maxlength="120" placeholder="e.g. Code ABC123, waiting on KYC">
+      </label>
+      <div class="modal-actions">
+        <button type="button" class="ghost-btn" data-close="cellModalBackdrop">Cancel</button>
+        <button type="submit" class="primary-btn">Save</button>
       </div>
     </form>
   </div>
@@ -567,20 +705,34 @@ const loadingState = $('loadingState');
 const emptyState = $('emptyState');
 const appsList = $('appsList');
 
-const contactForm = $('contactForm');
-const contactApp = $('contactApp');
-const contactName = $('contactName');
-const contactStatus = $('contactStatus');
-const contactNote = $('contactNote');
-const contactStatusFilter = $('contactStatusFilter');
-const contactAppFilter = $('contactAppFilter');
-const contactEmptyState = $('contactEmptyState');
-const contactsTable = $('contactsTable');
-
 const reportsEmptyState = $('reportsEmptyState');
 const reportsList = $('reportsList');
 
 const toastContainer = $('toastContainer');
+
+const friendSearch = $('friendSearch');
+const appSearchMatrix = $('appSearchMatrix');
+const addFriendBtn = $('addFriendBtn');
+const emptyAddFriendBtn = $('emptyAddFriendBtn');
+const matrixNoAppsState = $('matrixNoAppsState');
+const matrixEmptyState = $('matrixEmptyState');
+const matrixWrap = $('matrixWrap');
+const matrixTable = $('matrixTable');
+const matrixSummary = $('matrixSummary');
+
+const addFriendModalBackdrop = $('addFriendModalBackdrop');
+const addFriendForm = $('addFriendForm');
+const addFriendNameInput = $('addFriendNameInput');
+
+const cellModalBackdrop = $('cellModalBackdrop');
+const cellForm = $('cellForm');
+const cellFriendId = $('cellFriendId');
+const cellAppId = $('cellAppId');
+const cellModalSub = $('cellModalSub');
+const cellStatus = $('cellStatus');
+const cellReceived = $('cellReceived');
+const cellPending = $('cellPending');
+const cellNote = $('cellNote');
 
 const addAppModalBackdrop = $('addAppModalBackdrop');
 const addAppTitle = $('addAppTitle');
@@ -588,6 +740,8 @@ const addAppForm = $('addAppForm');
 const editAppId = $('editAppId');
 const f_name = $('f_name');
 const f_category = $('f_category');
+const f_icon = $('f_icon');
+const iconPreview = $('iconPreview');
 const joinFixedRow = $('joinFixedRow');
 const joinRangeRow = $('joinRangeRow');
 const f_joinFixed = $('f_joinFixed');
@@ -681,28 +835,111 @@ function getVoteStats(appId) {
   const pct = total ? Math.round((v.working / total) * 100) : null;
   return { ...v, total, pct };
 }
-function statusLabel(s) {
-  return { to_refer: '📋 To refer', in_progress: '⏳ In progress', referred: '📨 Referred', already_user: '✅ Already a user' }[s] || s;
+/* Matrix cell status metadata */
+const STATUS_META = {
+  in_progress:       { label: 'In progress',       emoji: '⏳' },
+  referred:           { label: 'Already referred',  emoji: '✅' },
+  already_user:       { label: 'Already a user',    emoji: '👤' },
+  referred_by_them:   { label: 'Referred by them',  emoji: '🔁' }
+};
+
+/* Deterministic colour + letter avatar for apps without an icon_url */
+const AVATAR_COLORS = ['#1F7A4D', '#C8932E', '#B4472D', '#33588F', '#7A4DB4', '#1F7A9C', '#9C5D1F', '#2E7D6B'];
+function colorForName(name) {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) % AVATAR_COLORS.length;
+  return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length];
 }
+function appIconHtml(app, sizeClass = '') {
+  const name = app.name || '?';
+  const letter = name.trim().charAt(0).toUpperCase() || '?';
+  const bg = colorForName(name);
+  const safeName = escapeHtml(name);
+  const url = (app.icon_url || '').trim();
+  if (url) {
+    const safeUrl = escapeHtml(url);
+    return `<span class="app-icon-wrap">
+      <img class="app-icon ${sizeClass}" src="${safeUrl}" alt="${safeName} icon" loading="lazy"
+           onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-flex';">
+      <span class="app-icon ${sizeClass}" style="background:${bg}; display:none;">${letter}</span>
+    </span>`;
+  }
+  return `<span class="app-icon-wrap"><span class="app-icon ${sizeClass}" style="background:${bg}">${letter}</span></span>`;
+}
+function uid() { return crypto.randomUUID ? crypto.randomUUID() : 'id' + Date.now() + Math.random().toString(36).slice(2); }
 
 /* ============================================================
-   5. PERSONAL REFERRAL TRACKER (browser-local only — never sent to Supabase)
+   5. REFERRAL MATRIX DATA LAYER (browser-local only — never sent to Supabase)
+   Two stores: friends (rows) and matrix cells (friend × app intersections).
+   Apps themselves are NOT stored locally — they always come live from appsCache,
+   so the grid is automatically "pre-filled" with every app in the directory.
    ============================================================ */
-const CONTACTS_KEY = 'upi_referral_contacts_v1';
-function loadAllContacts() { try { return JSON.parse(localStorage.getItem(CONTACTS_KEY)) || []; } catch { return []; } }
-function saveAllContacts(list) { localStorage.setItem(CONTACTS_KEY, JSON.stringify(list)); }
-function getContacts(appId) { return loadAllContacts().filter(c => c.app_id === appId); }
-function addContactEntry(entry) {
-  const list = loadAllContacts();
-  list.unshift({ id: crypto.randomUUID ? crypto.randomUUID() : 'c' + Date.now(), created_at: new Date().toISOString(), ...entry });
-  saveAllContacts(list);
+const FRIENDS_KEY = 'upi_referral_friends_v2';
+const MATRIX_KEY = 'upi_referral_matrix_v2';
+const OLD_CONTACTS_KEY = 'upi_referral_contacts_v1';
+
+function loadFriends() { try { return JSON.parse(localStorage.getItem(FRIENDS_KEY)) || []; } catch { return []; } }
+function saveFriends(list) { localStorage.setItem(FRIENDS_KEY, JSON.stringify(list)); }
+function loadMatrix() { try { return JSON.parse(localStorage.getItem(MATRIX_KEY)) || []; } catch { return []; } }
+function saveMatrix(list) { localStorage.setItem(MATRIX_KEY, JSON.stringify(list)); }
+
+function addFriend(name) {
+  const list = loadFriends();
+  const friend = { id: uid(), name, created_at: new Date().toISOString() };
+  list.push(friend);
+  saveFriends(list);
+  return friend;
 }
-function updateContactEntry(id, patch) {
-  const list = loadAllContacts();
-  const idx = list.findIndex(c => c.id === id);
-  if (idx > -1) { list[idx] = { ...list[idx], ...patch }; saveAllContacts(list); }
+function deleteFriend(friendId) {
+  saveFriends(loadFriends().filter(f => f.id !== friendId));
+  saveMatrix(loadMatrix().filter(m => m.friend_id !== friendId));
 }
-function deleteContactEntry(id) { saveAllContacts(loadAllContacts().filter(c => c.id !== id)); }
+function getCell(friendId, appId) {
+  return loadMatrix().find(m => m.friend_id === friendId && m.app_id === appId) || null;
+}
+function upsertCell(friendId, appId, patch) {
+  const list = loadMatrix();
+  const idx = list.findIndex(m => m.friend_id === friendId && m.app_id === appId);
+  if (idx > -1) { list[idx] = { ...list[idx], ...patch, updated_at: new Date().toISOString() }; }
+  else { list.push({ id: uid(), friend_id: friendId, app_id: appId, status: 'in_progress', amount_received: 0, amount_pending: 0, note: '', ...patch, updated_at: new Date().toISOString() }); }
+  saveMatrix(list);
+}
+function clearCell(friendId, appId) {
+  saveMatrix(loadMatrix().filter(m => !(m.friend_id === friendId && m.app_id === appId)));
+}
+function getReferralCountForApp(appId) {
+  return loadMatrix().filter(m => m.app_id === appId).length;
+}
+
+/* One-time migration from the old flat "contacts" list used in earlier versions */
+function migrateOldContactsIfNeeded() {
+  if (localStorage.getItem(FRIENDS_KEY)) return;
+  let old = [];
+  try { old = JSON.parse(localStorage.getItem(OLD_CONTACTS_KEY)) || []; } catch { old = []; }
+  if (!old.length) { saveFriends([]); saveMatrix([]); return; }
+  const friends = [];
+  const matrix = [];
+  const nameToId = {};
+  old.forEach(c => {
+    const key = (c.name || '').trim().toLowerCase();
+    if (!key) return;
+    let fid = nameToId[key];
+    if (!fid) {
+      fid = uid();
+      nameToId[key] = fid;
+      friends.push({ id: fid, name: c.name.trim(), created_at: c.created_at || new Date().toISOString() });
+    }
+    if (c.app_id && c.status && c.status !== 'to_refer') {
+      matrix.push({
+        id: uid(), friend_id: fid, app_id: c.app_id, status: c.status,
+        amount_received: 0, amount_pending: 0, note: c.note || '',
+        updated_at: c.created_at || new Date().toISOString()
+      });
+    }
+  });
+  saveFriends(friends);
+  saveMatrix(matrix);
+}
 
 /* ============================================================
    6. RENDERING
@@ -725,15 +962,6 @@ function renderCategoryOptions() {
   const curCat = categoryFilter.value;
   categoryFilter.innerHTML = '<option value="">All categories</option>' + cats.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
   if (cats.includes(curCat)) categoryFilter.value = curCat;
-
-  const appOptions = appsCache.map(a => `<option value="${a.id}">${escapeHtml(a.name)}</option>`).join('');
-  const curContactApp = contactApp.value;
-  contactApp.innerHTML = appOptions || '<option value="">Add an app first →</option>';
-  if ([...contactApp.options].some(o => o.value === curContactApp)) contactApp.value = curContactApp;
-
-  const curAppFilter = contactAppFilter.value;
-  contactAppFilter.innerHTML = '<option value="">All apps</option>' + appOptions;
-  if ([...contactAppFilter.options].some(o => o.value === curAppFilter)) contactAppFilter.value = curAppFilter;
 }
 
 function getFilteredSortedApps() {
@@ -777,7 +1005,7 @@ function renderAppRow(app, index, isTopSort) {
   const myVote = myVotes[app.id];
   const isNew = (Date.now() - new Date(app.created_at).getTime()) < 1000 * 60 * 60 * 24 * 3;
   const isTop = isTopSort && index === 0 && stats.total > 0;
-  const contacts = getContacts(app.id);
+  const trackedCount = getReferralCountForApp(app.id);
   const notesShort = app.notes ? truncate(app.notes, 140) : '';
 
   return `
@@ -785,6 +1013,7 @@ function renderAppRow(app, index, isTopSort) {
     <div class="ledger-serial">${String(index + 1).padStart(3, '0')}</div>
     <div class="row-main">
       <div class="row-name-line">
+        ${appIconHtml(app, 'sm')}
         <span class="row-name">${escapeHtml(app.name)}</span>
         ${app.verified_by_admin ? '<span class="badge badge-verified">✅ Verified</span>' : ''}
         ${isTop ? '<span class="badge badge-top">🏆 Top pick</span>' : ''}
@@ -811,7 +1040,7 @@ function renderAppRow(app, index, isTopSort) {
         <button class="vote-btn not_working ${myVote === 'not_working' ? 'active' : ''}" data-action="vote" data-vote="not_working" title="Mark as not working">👎 ${stats.not_working}</button>
       </div>
       <div class="row-links">
-        <button class="link-btn" data-action="track">👥 Track referral${contacts.length ? ` (${contacts.length})` : ''}</button>
+        <button class="link-btn" data-action="track">👥 Track referral${trackedCount ? ` (${trackedCount})` : ''}</button>
         <button class="link-btn" data-action="copy">📋 Copy invite</button>
         <button class="link-btn" data-action="report">🚩 Report</button>
         ${isAdmin ? `
@@ -823,33 +1052,98 @@ function renderAppRow(app, index, isTopSort) {
   </div>`;
 }
 
-function renderLedgerTab() {
-  const all = loadAllContacts();
-  let list = all;
-  if (contactStatusFilter.value) list = list.filter(c => c.status === contactStatusFilter.value);
-  if (contactAppFilter.value) list = list.filter(c => c.app_id === contactAppFilter.value);
+function renderMatrixPanel() {
+  migrateOldContactsIfNeeded();
+  const friends = loadFriends();
+  const apps = appsCache.slice().sort((a, b) => a.name.localeCompare(b.name));
+  const matrix = loadMatrix();
 
-  if (!list.length) { contactEmptyState.hidden = false; contactsTable.innerHTML = ''; return; }
-  contactEmptyState.hidden = true;
-  contactsTable.innerHTML = list.map(c => {
-    const app = appsCache.find(a => a.id === c.app_id);
-    return `
-    <div class="ledger-row" style="grid-template-columns:1fr 170px 70px;">
-      <div class="row-main">
-        <div class="row-name-line">
-          <span class="row-name">${escapeHtml(c.name)}</span>
-          <span class="badge badge-category">${app ? escapeHtml(app.name) : 'Deleted app'}</span>
-          <span class="status-pill status-${c.status}">${statusLabel(c.status)}</span>
+  matrixNoAppsState.hidden = apps.length > 0;
+  if (!apps.length) { matrixWrap.hidden = true; matrixEmptyState.hidden = true; matrixSummary.hidden = true; return; }
+
+  matrixEmptyState.hidden = friends.length > 0;
+  if (!friends.length) { matrixWrap.hidden = true; matrixSummary.hidden = true; return; }
+
+  const friendQ = friendSearch.value.trim().toLowerCase();
+  const appQ = appSearchMatrix.value.trim().toLowerCase();
+  const visibleApps = appQ ? apps.filter(a => a.name.toLowerCase().includes(appQ)) : apps;
+  const visibleFriends = friendQ ? friends.filter(f => f.name.toLowerCase().includes(friendQ)) : friends;
+
+  if (!visibleApps.length || !visibleFriends.length) {
+    matrixWrap.hidden = false; matrixSummary.hidden = true;
+    matrixTable.innerHTML = `<tbody><tr><td style="padding:24px; text-align:center; color:var(--ink-soft);">No match for that search.</td></tr></tbody>`;
+    return;
+  }
+  matrixWrap.hidden = false; matrixSummary.hidden = false;
+
+  const cellMap = {};
+  matrix.forEach(m => { cellMap[m.friend_id + '::' + m.app_id] = m; });
+
+  const thead = `<thead><tr>
+    <th class="matrix-corner">Friend ↓ / App →</th>
+    ${visibleApps.map(a => `<th class="matrix-app-head" data-app-col="${a.id}" title="${escapeHtml(a.name)}">${appIconHtml(a)}<span class="app-head-name">${escapeHtml(a.name)}</span></th>`).join('')}
+    <th class="matrix-app-head matrix-total-head">Total</th>
+  </tr></thead>`;
+
+  const bodyRows = visibleFriends.map(f => {
+    let rowReceived = 0, rowPending = 0;
+    const cells = visibleApps.map(a => {
+      const cell = cellMap[f.id + '::' + a.id];
+      if (cell) { rowReceived += Number(cell.amount_received || 0); rowPending += Number(cell.amount_pending || 0); }
+      return renderCellButton(f, a, cell);
+    }).join('');
+    return `<tr class="matrix-row">
+      <td class="matrix-friend-cell">
+        <div class="matrix-friend-name">
+          <span>${escapeHtml(f.name)}</span>
+          <button class="friend-del-btn" data-del-friend="${f.id}" title="Remove ${escapeHtml(f.name)}" aria-label="Remove friend">🗑</button>
         </div>
-        ${c.note ? `<div class="row-notes">${escapeHtml(c.note)}</div>` : ''}
-        <div class="row-meta">Added ${timeAgo(c.created_at)}</div>
-      </div>
-      <div><select class="contact-status-select" data-id="${c.id}" aria-label="Change status">
-        ${['to_refer', 'in_progress', 'referred', 'already_user'].map(s => `<option value="${s}" ${s === c.status ? 'selected' : ''}>${statusLabel(s)}</option>`).join('')}
-      </select></div>
-      <div class="row-links"><button class="link-btn danger" data-del-contact="${c.id}">🗑</button></div>
-    </div>`;
+      </td>
+      ${cells}
+      <td class="matrix-friend-total">₹${rowReceived.toLocaleString('en-IN')}${rowPending ? `<br><span style="color:var(--stamp)">+₹${rowPending.toLocaleString('en-IN')} due</span>` : ''}</td>
+    </tr>`;
   }).join('');
+
+  let grandReceived = 0, grandPending = 0;
+  const totalCells = visibleApps.map(a => {
+    let received = 0, pending = 0;
+    visibleFriends.forEach(f => {
+      const c = cellMap[f.id + '::' + a.id];
+      if (c) { received += Number(c.amount_received || 0); pending += Number(c.amount_pending || 0); }
+    });
+    grandReceived += received; grandPending += pending;
+    return `<td class="matrix-total-cell">₹${received.toLocaleString('en-IN')}${pending ? `<br><span style="color:var(--stamp)">+₹${pending.toLocaleString('en-IN')}</span>` : ''}</td>`;
+  }).join('');
+
+  const totalRow = `<tr class="matrix-total-row">
+    <th class="matrix-corner">Total received</th>
+    ${totalCells}
+    <td class="matrix-total-cell">₹${grandReceived.toLocaleString('en-IN')}${grandPending ? `<br><span style="color:var(--stamp)">+₹${grandPending.toLocaleString('en-IN')}</span>` : ''}</td>
+  </tr>`;
+
+  matrixTable.innerHTML = thead + `<tbody>${bodyRows}${totalRow}</tbody>`;
+
+  matrixSummary.innerHTML = `
+    <div class="summary-card"><span class="num">₹${grandReceived.toLocaleString('en-IN')}</span><span class="lbl">Total received</span></div>
+    <div class="summary-card"><span class="num" style="color:var(--stamp)">₹${grandPending.toLocaleString('en-IN')}</span><span class="lbl">Yet to receive</span></div>
+    <div class="summary-card"><span class="num" style="color:var(--ink);">${friends.length}</span><span class="lbl">Friends tracked</span></div>
+  `;
+}
+
+function renderCellButton(friend, app, cell) {
+  const status = cell ? cell.status : null;
+  const meta = status ? STATUS_META[status] : null;
+  const cls = status ? `cell-${status}` : 'cell-empty';
+  const emoji = meta ? meta.emoji : '➕';
+  const received = cell && Number(cell.amount_received) ? `<span class="cell-money received">₹${Number(cell.amount_received).toLocaleString('en-IN')}</span>` : '';
+  const pending = cell && Number(cell.amount_pending) ? `<span class="cell-money pending">+₹${Number(cell.amount_pending).toLocaleString('en-IN')}</span>` : '';
+  const titleBits = `${friend.name} × ${app.name}${meta ? ' — ' + meta.label : ' — not started'}`;
+  return `<td class="${cls}">
+    <button type="button" class="matrix-cell-btn" data-friend="${friend.id}" data-app="${app.id}" title="${escapeHtml(titleBits)}">
+      <span class="cell-emoji">${emoji}</span>
+      ${received}${pending}
+    </button>
+  </td>`;
 }
 
 function renderReportsList() {
@@ -938,6 +1232,12 @@ function wireBonusToggle(name, fixedRowId, rangeRowId) {
 wireBonusToggle('joiningType', 'joinFixedRow', 'joinRangeRow');
 wireBonusToggle('referralType', 'refFixedRow', 'refRangeRow');
 
+function updateIconPreview() {
+  iconPreview.innerHTML = appIconHtml({ name: f_name.value.trim() || '?', icon_url: f_icon.value.trim() }, 'lg');
+}
+f_name.addEventListener('input', updateIconPreview);
+f_icon.addEventListener('input', updateIconPreview);
+
 function openAddModal() {
   addAppForm.reset();
   editAppId.value = '';
@@ -945,6 +1245,7 @@ function openAddModal() {
   addAppSubmitBtn.textContent = 'Add app';
   joinFixedRow.hidden = true; joinRangeRow.hidden = true;
   refFixedRow.hidden = true; refRangeRow.hidden = true;
+  updateIconPreview();
   openModal('addAppModalBackdrop');
 }
 function openEditModal(app) {
@@ -952,6 +1253,7 @@ function openEditModal(app) {
   editAppId.value = app.id;
   f_name.value = app.name;
   f_category.value = app.category || '';
+  f_icon.value = app.icon_url || '';
 
   document.querySelector(`input[name="joiningType"][value="${app.joining_type}"]`).checked = true;
   f_joinFixed.value = app.joining_type === 'fixed' ? app.joining_min : '';
@@ -967,6 +1269,7 @@ function openEditModal(app) {
   f_addedBy.value = app.added_by || '';
   addAppTitle.textContent = '✏️ Edit app';
   addAppSubmitBtn.textContent = 'Save changes';
+  updateIconPreview();
   openModal('addAppModalBackdrop');
 }
 
@@ -992,6 +1295,7 @@ addAppForm.addEventListener('submit', async (e) => {
 
   const payload = {
     name, category: f_category.value.trim() || null,
+    icon_url: f_icon.value.trim() || null,
     joining_type: joiningType, joining_min, joining_max,
     referral_type: referralType, referral_min, referral_max,
     notes: f_notes.value.trim() || null,
@@ -1104,10 +1408,16 @@ reportsList.addEventListener('click', async (e) => {
    ============================================================ */
 function trackReferral(app) {
   showPanel('ledger');
-  contactApp.value = app.id;
-  contactAppFilter.value = app.id;
-  renderLedgerTab();
-  contactName.focus();
+  setTimeout(() => {
+    const th = matrixTable.querySelector(`[data-app-col="${app.id}"]`);
+    if (th) {
+      th.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      th.classList.add('col-flash');
+      setTimeout(() => th.classList.remove('col-flash'), 1600);
+    } else if (!loadFriends().length) {
+      toast(`Add a friend first, then mark progress for ${app.name}`, 'info');
+    }
+  }, 80);
 }
 function copyInvite(app) {
   const joining = formatBonus(app.joining_type, app.joining_min, app.joining_max);
@@ -1152,33 +1462,82 @@ appsList.addEventListener('click', (e) => {
 });
 
 /* ============================================================
-   15. REFERRAL TRACKER TAB — events
+   15. REFERRAL MATRIX — events
    ============================================================ */
-contactForm.addEventListener('submit', (e) => {
-  e.preventDefault();
-  if (!contactApp.value) { toast('Add an app first, then come back here', 'error'); return; }
-  addContactEntry({
-    app_id: contactApp.value,
-    name: contactName.value.trim(),
-    status: contactStatus.value,
-    note: contactNote.value.trim()
-  });
-  contactName.value = ''; contactNote.value = ''; contactStatus.value = 'to_refer';
-  renderLedgerTab(); renderApps();
-  toast('Contact added to your tracker', 'success');
-});
-contactStatusFilter.addEventListener('change', renderLedgerTab);
-contactAppFilter.addEventListener('change', renderLedgerTab);
-contactsTable.addEventListener('change', (e) => {
-  if (e.target.classList.contains('contact-status-select')) {
-    updateContactEntry(e.target.dataset.id, { status: e.target.value });
-    renderLedgerTab();
+function openCellModal(friend, app, cell) {
+  cellFriendId.value = friend.id;
+  cellAppId.value = app.id;
+  cellModalSub.textContent = `${friend.name} × ${app.name}`;
+  cellStatus.value = cell ? cell.status : '';
+  cellReceived.value = cell && Number(cell.amount_received) ? cell.amount_received : '';
+  cellPending.value = cell && Number(cell.amount_pending) ? cell.amount_pending : '';
+  cellNote.value = cell ? (cell.note || '') : '';
+  openModal('cellModalBackdrop');
+}
+
+matrixTable.addEventListener('click', (e) => {
+  const cellBtn = e.target.closest('.matrix-cell-btn');
+  if (cellBtn) {
+    const friend = loadFriends().find(f => f.id === cellBtn.dataset.friend);
+    const app = appsCache.find(a => a.id === cellBtn.dataset.app);
+    if (!friend || !app) return;
+    openCellModal(friend, app, getCell(friend.id, app.id));
+    return;
+  }
+  const delBtn = e.target.closest('[data-del-friend]');
+  if (delBtn) {
+    const fid = delBtn.dataset.delFriend;
+    const friend = loadFriends().find(f => f.id === fid);
+    confirmAction(`Remove ${friend ? friend.name : 'this friend'} from your grid? This deletes all their saved cells too.`).then(ok => {
+      if (ok) { deleteFriend(fid); renderMatrixPanel(); toast('Friend removed', 'success'); }
+    });
   }
 });
-contactsTable.addEventListener('click', (e) => {
-  const id = e.target.closest('[data-del-contact]')?.dataset.delContact;
-  if (id) { deleteContactEntry(id); renderLedgerTab(); renderApps(); }
+
+cellForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+  const friendId = cellFriendId.value, appId = cellAppId.value;
+  const status = cellStatus.value;
+  if (!status) {
+    clearCell(friendId, appId);
+    toast('Cell cleared', 'success');
+  } else {
+    upsertCell(friendId, appId, {
+      status,
+      amount_received: Number(cellReceived.value) || 0,
+      amount_pending: Number(cellPending.value) || 0,
+      note: cellNote.value.trim()
+    });
+    toast('Saved', 'success');
+  }
+  closeModal('cellModalBackdrop');
+  renderMatrixPanel();
 });
+
+function launchAddFriendModal() {
+  addFriendForm.reset();
+  openModal('addFriendModalBackdrop');
+  setTimeout(() => addFriendNameInput.focus(), 60);
+}
+addFriendBtn.addEventListener('click', launchAddFriendModal);
+emptyAddFriendBtn.addEventListener('click', launchAddFriendModal);
+
+addFriendForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+  const name = addFriendNameInput.value.trim();
+  if (!name) return;
+  if (loadFriends().some(f => f.name.toLowerCase() === name.toLowerCase())) {
+    toast('That friend is already in your grid', 'error');
+    return;
+  }
+  addFriend(name);
+  closeModal('addFriendModalBackdrop');
+  renderMatrixPanel();
+  toast(`${name} added to the grid`, 'success');
+});
+
+friendSearch.addEventListener('input', debounce(renderMatrixPanel, 150));
+appSearchMatrix.addEventListener('input', debounce(renderMatrixPanel, 150));
 
 /* ============================================================
    16. TABS / PANELS
@@ -1191,7 +1550,7 @@ function showPanel(name) {
   tabLedger.classList.toggle('active', name === 'ledger');
   tabApps.setAttribute('aria-selected', name === 'apps');
   tabLedger.setAttribute('aria-selected', name === 'ledger');
-  if (name === 'ledger') renderLedgerTab();
+  if (name === 'ledger') renderMatrixPanel();
 }
 tabApps.addEventListener('click', () => showPanel('apps'));
 tabLedger.addEventListener('click', () => showPanel('ledger'));
