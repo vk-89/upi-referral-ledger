@@ -87,6 +87,7 @@
   }
   .primary-btn{ background:var(--green); color:#fff; box-shadow:var(--shadow);}
   .primary-btn:hover{ filter:brightness(1.08); transform:translateY(-1px); }
+  .primary-btn:disabled{ background:var(--ink-faint); cursor:not-allowed; transform:none; filter:none; }
   .ghost-btn{ background:transparent; color:inherit; border:1.5px solid currentColor; opacity:.85;}
   .ghost-btn:hover{ opacity:1; transform:translateY(-1px); }
   .ghost-btn.small{ padding:6px 12px; font-size:12.5px; }
@@ -169,10 +170,13 @@
   .app-icon.xs{ width:18px; height:18px; border-radius:5px; font-size:9px; }
   .icon-preview-row{ display:flex; align-items:center; gap:10px; margin-top:-4px; }
   .icon-preview-row span.hint{ font-size:12px; color:var(--ink-soft); font-weight:400; }
+  .file-input-wrapper { display:flex; flex-direction:column; gap:6px; }
+  .file-input-wrapper input[type="file"] { font-size:13px; color:var(--ink-soft); }
 
   .row-meta{ font-size:12px; color:var(--ink-faint); margin-top:3px; }
   .row-notes{ font-size:13px; color:var(--ink-soft); margin-top:6px; max-width:560px; }
   .row-notes .more-btn{ background:none; border:none; color:var(--green-deep); font-weight:600; cursor:pointer; font-size:12.5px; padding:0; margin-left:4px;}
+  .bonus-col{ font-family:var(--font-mono); }
   .bonus-col{ font-family:var(--font-mono); }
   .bonus-label{ font-size:10.5px; text-transform:uppercase; letter-spacing:.4px; color:var(--ink-faint); display:block; }
   .bonus-amount{ font-size:14.5px; font-weight:600; color:var(--green-deep); }
@@ -301,7 +305,6 @@
     padding:20px; z-index:100; backdrop-filter:blur(2px);
   }
   
-  /* FIX: Forces elements with the hidden attribute to obey display: none */
   .modal-backdrop[hidden] {
     display: none !important;
   }
@@ -506,12 +509,20 @@
           <option value="Other">
         </datalist>
       </label>
-      <label>App icon URL (optional)
+      
+      <div id="adminIconUploadSection" class="file-input-wrapper" hidden>
+        <label>Upload App Icon / Photo
+          <input id="f_file" type="file" accept="image/png, image/jpeg, image/webp">
+        </label>
+      </div>
+      
+      <label id="urlIconLabel">App icon URL (optional)
         <input id="f_icon" type="text" placeholder="https://example.com/logo.png">
       </label>
+      
       <div class="icon-preview-row">
         <span id="iconPreview"></span>
-        <span class="hint">Preview — leave blank to use an auto-generated icon</span>
+        <span class="hint">Preview — auto-generated if left completely blank</span>
       </div>
 
       <fieldset class="bonus-fieldset">
@@ -741,7 +752,9 @@ const editAppId = $('editAppId');
 const f_name = $('f_name');
 const f_category = $('f_category');
 const f_icon = $('f_icon');
-const iconPreview = $('iconPreview');
+const f_file = $('f_file');
+const adminIconUploadSection = $('adminIconUploadSection');
+const iconPreview = ...; // assigned dynamically inside init/scopes down below
 const joinFixedRow = $('joinFixedRow');
 const joinRangeRow = $('joinRangeRow');
 const f_joinFixed = $('f_joinFixed');
@@ -776,8 +789,8 @@ const confirmOkBtn = $('confirmOkBtn');
    3. STATE
    ============================================================ */
 let appsCache = [];
-let votesAgg = {};   // { appId: {working, not_working} }
-let myVotes = {};    // { appId: 'working' | 'not_working' }
+let votesAgg = {};   
+let myVotes = {};    
 let reportsCache = [];
 let isAdmin = false;
 
@@ -835,7 +848,7 @@ function getVoteStats(appId) {
   const pct = total ? Math.round((v.working / total) * 100) : null;
   return { ...v, total, pct };
 }
-/* Matrix cell status metadata */
+
 const STATUS_META = {
   in_progress:       { label: 'In progress',       emoji: '⏳' },
   referred:           { label: 'Already referred',  emoji: '✅' },
@@ -843,7 +856,6 @@ const STATUS_META = {
   referred_by_them:   { label: 'Referred by them',  emoji: '🔁' }
 };
 
-/* Deterministic colour + letter avatar for apps without an icon_url */
 const AVATAR_COLORS = ['#1F7A4D', '#C8932E', '#B4472D', '#33588F', '#7A4DB4', '#1F7A9C', '#9C5D1F', '#2E7D6B'];
 function colorForName(name) {
   let h = 0;
@@ -869,10 +881,7 @@ function appIconHtml(app, sizeClass = '') {
 function uid() { return crypto.randomUUID ? crypto.randomUUID() : 'id' + Date.now() + Math.random().toString(36).slice(2); }
 
 /* ============================================================
-   5. REFERRAL MATRIX DATA LAYER (browser-local only — never sent to Supabase)
-   Two stores: friends (rows) and matrix cells (friend × app intersections).
-   Apps themselves are NOT stored locally — they always come live from appsCache,
-   so the grid is automatically "pre-filled" with every app in the directory.
+   5. REFERRAL MATRIX DATA LAYER
    ============================================================ */
 const FRIENDS_KEY = 'upi_referral_friends_v2';
 const MATRIX_KEY = 'upi_referral_matrix_v2';
@@ -911,7 +920,6 @@ function getReferralCountForApp(appId) {
   return loadMatrix().filter(m => m.app_id === appId).length;
 }
 
-/* One-time migration from the old flat "contacts" list used in earlier versions */
 function migrateOldContactsIfNeeded() {
   if (localStorage.getItem(FRIENDS_KEY)) return;
   let old = [];
@@ -1238,6 +1246,20 @@ function updateIconPreview() {
 f_name.addEventListener('input', updateIconPreview);
 f_icon.addEventListener('input', updateIconPreview);
 
+// Dynamic local preview for selected image/photo asset configuration
+f_file.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      iconPreview.innerHTML = `<span class="app-icon-wrap"><img class="app-icon lg" src="${event.target.result}" alt="Preview icon"></span>`;
+    };
+    reader.readAsDataURL(file);
+  } else {
+    updateIconPreview();
+  }
+});
+
 function openAddModal() {
   addAppForm.reset();
   editAppId.value = '';
@@ -1293,17 +1315,37 @@ addAppForm.addEventListener('submit', async (e) => {
     if (referral_max < referral_min) { toast('Referral max must be ≥ min', 'error'); return; }
   }
 
-  const payload = {
-    name, category: f_category.value.trim() || null,
-    icon_url: f_icon.value.trim() || null,
-    joining_type: joiningType, joining_min, joining_max,
-    referral_type: referralType, referral_min, referral_max,
-    notes: f_notes.value.trim() || null,
-    added_by: f_addedBy.value.trim() || 'Anonymous'
-  };
-
   try {
     addAppSubmitBtn.disabled = true;
+    let finalIconUrl = f_icon.value.trim() || null;
+
+    // Admin Mode File-upload sequence
+    if (isAdmin && f_file.files.length > 0) {
+      const file = f_file.files[0];
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}_${Math.random().toString(36).slice(2, 7)}.${fileExt}`;
+      const filePath = `icons/${fileName}`;
+
+      toast('Uploading icon image assets...', 'info');
+      const { data: uploadData, error: uploadError } = await sb.storage
+        .from('app-icons')
+        .upload(filePath, file, { cacheControl: '3600', upsert: true });
+
+      if (uploadError) throw new Error('Asset upload failed: ' + uploadError.message);
+
+      const { data: urlData } = sb.storage.from('app-icons').getPublicUrl(filePath);
+      finalIconUrl = urlData.publicUrl;
+    }
+
+    const payload = {
+      name, category: f_category.value.trim() || null,
+      icon_url: finalIconUrl,
+      joining_type: joiningType, joining_min, joining_max,
+      referral_type: referralType, referral_min, referral_max,
+      notes: f_notes.value.trim() || null,
+      added_by: f_addedBy.value.trim() || 'Anonymous'
+    };
+
     if (editAppId.value) {
       const { error } = await sb.from('apps').update(payload).eq('id', editAppId.value);
       if (error) throw error;
@@ -1346,8 +1388,17 @@ function setAdminState(loggedIn) {
   isAdmin = loggedIn;
   adminBar.hidden = !loggedIn;
   adminLoginBtn.hidden = loggedIn;
-  if (loggedIn) { refreshReports(); }
-  else { reportsPanel.hidden = true; showPanel('apps'); }
+  adminIconUploadSection.hidden = !loggedIn;
+  
+  if (loggedIn) { 
+    refreshReports(); 
+    urlIconLabel.querySelector('span')?.remove();
+    urlIconLabel.insertAdjacentHTML('afterbegin', '<span style="font-weight:normal; font-size:12px; color:var(--ink-faint);">Or paste external URL alternative:</span>');
+  } else { 
+    reportsPanel.hidden = true; 
+    showPanel('apps'); 
+    urlIconLabel.querySelector('span')?.remove();
+  }
   renderApps();
 }
 
@@ -1355,7 +1406,7 @@ adminLoginBtn.addEventListener('click', () => openModal('adminLoginModalBackdrop
 adminLoginForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   try {
-    const { error } = await sb.auth.signInWithPassword({ email: adminEmail.value.trim(), password: adminPassword.value });
+    const { data, error } = await sb.auth.signInWithPassword({ email: adminEmail.value.trim(), password: adminPassword.value });
     if (error) throw error;
     toast('Signed in as admin', 'success');
     closeModal('adminLoginModalBackdrop');
@@ -1603,6 +1654,11 @@ function subscribeRealtime() {
 /* ============================================================
    21. INIT
    ============================================================ */
+const urlIconLabel = $('urlIconLabel');
+const iconPreviewElement = $('iconPreview');
+// Re-assign globally referenced local module item safely
+window.iconPreview = iconPreviewElement;
+
 async function init() {
   if (!isConfigured) {
     connBanner.hidden = false;
