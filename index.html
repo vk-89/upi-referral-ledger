@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>UPI Referral Ledger — Cashback & Referral Tracker</title>
 <meta name="description" content="Find UPI apps giving joining & referral cashback, track who you've referred, and vote apps up or down based on whether offers still work.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%231F7A4D'/%3E%3Ctext x='50' y='68' font-size='58' text-anchor='middle' fill='white' font-family='Georgia'%3E%E2%82%B9%3C/text%3E%3C/svg%3E">
+<link class="favicon" rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%231F7A4D'/%3E%3Ctext x='50' y='68' font-size='58' text-anchor='middle' fill='white' font-family='Georgia'%3E%E2%82%B9%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
@@ -109,6 +109,7 @@
   .stat-item:last-child{ border-right:none; }
   .stat-item-wide{ grid-column:span 1; }
   .stat-num{ display:block; font-family:var(--font-mono); font-size:20px; font-weight:600; color:var(--green-deep);}
+  .stat-num{ display:block; font-family:var(--font-mono); font-size:20px; font-weight:600; color:var(--green-deep);}
   .stat-item-wide .stat-num{ color:var(--ink); font-size:16px; }
   .stat-label{ font-size:11.5px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.4px;}
   @media (max-width:680px){ .stats-strip{ grid-template-columns:repeat(2,1fr); } .stat-item{ border-bottom:1px dashed var(--line);} }
@@ -137,7 +138,7 @@
   .empty-state{ text-align:center; padding:50px 20px; color:var(--ink-soft); }
   .empty-state p{ font-size:15px; margin-bottom:14px; }
 
-  /* ===== LEDGER LIST / ROWS (signature element) ===== */
+  /* ===== LEDGER LIST / ROWS ===== */
   .ledger-list{ background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; }
   .ledger-row{
     display:grid; grid-template-columns:48px 1.6fr 1fr 1fr 70px auto; gap:14px; align-items:center;
@@ -157,7 +158,7 @@
   .badge-category{ background:var(--paper-alt); color:var(--ink-soft); }
   .badge-top{ background:var(--gold); color:#2b2106; }
 
-  /* ===== APP ICON (admin-settable, falls back to a generated letter avatar) ===== */
+  /* ===== APP ICON ===== */
   .app-icon-wrap{ display:inline-flex; flex-shrink:0; }
   .app-icon{
     width:28px; height:28px; border-radius:8px; object-fit:cover; flex-shrink:0;
@@ -176,7 +177,6 @@
   .row-meta{ font-size:12px; color:var(--ink-faint); margin-top:3px; }
   .row-notes{ font-size:13px; color:var(--ink-soft); margin-top:6px; max-width:560px; }
   .row-notes .more-btn{ background:none; border:none; color:var(--green-deep); font-weight:600; cursor:pointer; font-size:12.5px; padding:0; margin-left:4px;}
-  .bonus-col{ font-family:var(--font-mono); }
   .bonus-col{ font-family:var(--font-mono); }
   .bonus-label{ font-size:10.5px; text-transform:uppercase; letter-spacing:.4px; color:var(--ink-faint); display:block; }
   .bonus-amount{ font-size:14.5px; font-weight:600; color:var(--green-deep); }
@@ -224,7 +224,7 @@
   .amount-row label{ flex:1; min-width:110px; font-size:12.5px; color:var(--ink-soft); display:flex; flex-direction:column; gap:4px;}
   .amount-row input{ padding:8px 10px; border-radius:8px; border:1.5px solid var(--line); font-family:var(--font-mono); background:var(--paper-raised); color:var(--ink);}
 
-  /* ===== REFERRAL MATRIX (ledger tab) ===== */
+  /* ===== REFERRAL MATRIX ===== */
   .ledger-intro h2{ font-family:var(--font-display); margin:0 0 4px; }
   .ledger-intro p{ color:var(--ink-soft); font-size:14px; margin:0 0 18px; }
 
@@ -238,7 +238,6 @@
   .matrix-legend{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
   .legend-chip{ font-size:11.5px; font-weight:600; padding:4px 10px; border-radius:20px; border:1px solid transparent; white-space:nowrap; }
 
-  /* Cell state colours — reused by legend chips + grid cells */
   .cell-empty{ background:var(--paper-alt); color:var(--ink-faint); }
   .cell-in_progress{ background:var(--gold-soft); color:var(--gold); }
   .cell-referred{ background:var(--green-soft); color:var(--green-deep); }
@@ -673,7 +672,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
 /* ============================================================
-   1. CONFIG — paste your Supabase project values here
+   1. CONFIG
    ============================================================ */
 const SUPABASE_URL = 'https://bkjgxhbiomeuasexpxru.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJramd4aGJpb21ldWFzZXhweHJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5NzMyMTQsImV4cCI6MjA5NzU0OTIxNH0.zqcFeuL5FtFLwCtz4p2dESHt9-1uCzIY1hbQGeYgYS8';
@@ -754,7 +753,7 @@ const f_category = $('f_category');
 const f_icon = $('f_icon');
 const f_file = $('f_file');
 const adminIconUploadSection = $('adminIconUploadSection');
-const iconPreview = ...; // assigned dynamically inside init/scopes down below
+const iconPreview = $('iconPreview');
 const joinFixedRow = $('joinFixedRow');
 const joinRangeRow = $('joinRangeRow');
 const f_joinFixed = $('f_joinFixed');
@@ -1246,7 +1245,6 @@ function updateIconPreview() {
 f_name.addEventListener('input', updateIconPreview);
 f_icon.addEventListener('input', updateIconPreview);
 
-// Dynamic local preview for selected image/photo asset configuration
 f_file.addEventListener('change', (e) => {
   const file = e.target.files[0];
   if (file) {
@@ -1319,7 +1317,6 @@ addAppForm.addEventListener('submit', async (e) => {
     addAppSubmitBtn.disabled = true;
     let finalIconUrl = f_icon.value.trim() || null;
 
-    // Admin Mode File-upload sequence
     if (isAdmin && f_file.files.length > 0) {
       const file = f_file.files[0];
       const fileExt = file.name.split('.').pop();
@@ -1655,9 +1652,6 @@ function subscribeRealtime() {
    21. INIT
    ============================================================ */
 const urlIconLabel = $('urlIconLabel');
-const iconPreviewElement = $('iconPreview');
-// Re-assign globally referenced local module item safely
-window.iconPreview = iconPreviewElement;
 
 async function init() {
   if (!isConfigured) {
