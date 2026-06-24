@@ -458,7 +458,6 @@
 
 <div id="toastContainer" class="toast-container" aria-live="polite"></div>
 
-<!-- Modal Dialogs -->
 <div class="modal-backdrop" id="addAppModalBackdrop" hidden>
   <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="addAppTitle">
     <div class="modal-head">
@@ -955,7 +954,7 @@ function renderCategoryOptions() {
   const cats = [...new Set(appsCache.map(a => a.category).filter(Boolean))].sort();
   const curCat = categoryFilter.value;
   categoryFilter.innerHTML = '<option value="">All categories</option>' + cats.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
-  if (cats.includes(cats.includes(curCat))) categoryFilter.value = curCat;
+  if (cats.includes(curCat)) categoryFilter.value = curCat;
 }
 
 function getFilteredSortedApps() {
@@ -988,8 +987,9 @@ function renderApps() {
   if (!isConfigured) return;
   const list = getFilteredSortedApps();
   
-  // FIX: Explicitly hide the skeleton row setup whenever rendering gets executed to remove blank space
+  // Clean block fix: Always turn off raw layout loader
   loadingState.hidden = true;
+  loadingState.style.display = 'none';
   
   if (!list.length) { appsList.hidden = true; emptyState.hidden = false; return; }
   emptyState.hidden = true; appsList.hidden = false;
@@ -1197,9 +1197,14 @@ async function refreshReports() {
   } catch (err) { console.error(err); }
 }
 async function loadAll() {
-  loadingState.hidden = false; appsList.hidden = true; emptyState.hidden = true;
+  loadingState.hidden = false; 
+  loadingState.style.display = 'flex';
+  appsList.hidden = true; emptyState.hidden = true;
   await Promise.all([fetchApps(), fetchVotes()]);
+  
+  // Kill layout loaders explicitly on retrieval complete
   loadingState.hidden = true;
+  loadingState.style.display = 'none';
   renderApps(); renderStats();
 }
 
