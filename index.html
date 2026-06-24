@@ -239,15 +239,6 @@
     position:sticky; left:0; z-index:3; background:var(--paper-alt);
     min-width:140px; text-align:left; padding:8px 12px !important; font-size:11px; color:var(--ink-soft); font-weight:600;
   }
-  .matrix-app-head{ min-width:62px; max-width:62px; text-align:center; transition:background .3s ease; }
-  .matrix-app-head .app-icon-wrap{ margin:0 auto 4px; }
-  .matrix-app-head .app-head-name{
-    font-size:9.5px; line-height:1.15; color:var(--ink-soft); display:block;
-    max-height:24px; overflow:hidden; word-break:break-word; padding:0 2px;
-  }
-  .matrix-app-head.col-flash{ background:var(--green-soft); }
-  .matrix-total-head{ min-width:74px; }
-
   .matrix-friend-cell{
     position:sticky; left:0; z-index:1; background:var(--paper-raised);
     min-width:140px; max-width:180px; padding:8px 10px;
@@ -467,6 +458,7 @@
 
 <div id="toastContainer" class="toast-container" aria-live="polite"></div>
 
+<!-- Modal Dialogs -->
 <div class="modal-backdrop" id="addAppModalBackdrop" hidden>
   <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="addAppTitle">
     <div class="modal-head">
@@ -963,7 +955,7 @@ function renderCategoryOptions() {
   const cats = [...new Set(appsCache.map(a => a.category).filter(Boolean))].sort();
   const curCat = categoryFilter.value;
   categoryFilter.innerHTML = '<option value="">All categories</option>' + cats.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
-  if (cats.includes(curCat)) categoryFilter.value = curCat;
+  if (cats.includes(cats.includes(curCat))) categoryFilter.value = curCat;
 }
 
 function getFilteredSortedApps() {
@@ -995,6 +987,10 @@ function getFilteredSortedApps() {
 function renderApps() {
   if (!isConfigured) return;
   const list = getFilteredSortedApps();
+  
+  // FIX: Explicitly hide the skeleton row setup whenever rendering gets executed to remove blank space
+  loadingState.hidden = true;
+  
   if (!list.length) { appsList.hidden = true; emptyState.hidden = false; return; }
   emptyState.hidden = true; appsList.hidden = false;
   const isTopSort = sortSelect.value === 'top';
