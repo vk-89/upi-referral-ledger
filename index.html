@@ -619,15 +619,15 @@
 <div class="modal-backdrop" id="adminLoginModalBackdrop" hidden>
   <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="adminLoginTitle">
     <div class="modal-head">
-      <h3 id="adminLoginTitle">🔐 Admin sign in</h3>
+      <h3 id="adminLoginTitle">🔐 Admin sign in / create account</h3>
       <button class="icon-btn" data-close="adminLoginModalBackdrop" aria-label="Close">✕</button>
     </div>
     <form id="adminLoginForm" class="modal-form">
-      <label>Email <input id="adminEmail" type="email" required></label>
-      <label>Password <input id="adminPassword" type="password" required></label>
+      <label>Email <input id="adminEmail" type="email" required autocomplete="username"></label>
+      <label>Password <input id="adminPassword" type="password" required minlength="6" autocomplete="current-password"></label>
       <div class="modal-actions">
         <button type="button" class="ghost-btn" data-close="adminLoginModalBackdrop">Cancel</button>
-        <button type="submit" class="primary-btn">Sign in</button>
+        <button type="submit" class="primary-btn" id="adminSubmitBtn">Sign in</button>
       </div>
     </form>
   </div>
@@ -671,6 +671,13 @@ if (isConfigured) {
   auth = firebase.auth();
   db = firebase.firestore();
   storage = firebase.storage();
+  
+  // Enable persistent offline caching for Firestore
+  db.enablePersistence({ synchronizeTabs: true }).catch((err) => {
+    if (err.code !== 'failed-precondition' && err.code !== 'unimplemented') {
+      console.warn('Persistence error:', err);
+    }
+  });
 }
 
 /* ============================================================
@@ -772,6 +779,7 @@ const adminLoginModalBackdrop = $('adminLoginModalBackdrop');
 const adminLoginForm = $('adminLoginForm');
 const adminEmail = $('adminEmail');
 const adminPassword = $('adminPassword');
+const adminSubmitBtn = $('adminSubmitBtn');
 
 const confirmModalBackdrop = $('confirmModalBackdrop');
 const confirmMessage = $('confirmMessage');
@@ -780,12 +788,31 @@ const confirmOkBtn = $('confirmOkBtn');
 const urlIconLabel = $('urlIconLabel');
 
 /* ============================================================
-   3. STATE & UTILITIES
+   3. INSTANT LOCAL STORAGE CACHE & STATE
    ============================================================ */
-let appsCache = [];
+const CACHE_APPS_KEY = 'upi_cached_apps_v1';
+const CACHE_VOTES_KEY = 'upi_cached_votes_v1';
+const CACHE_REPORTS_KEY = 'upi_cached_reports_v1';
+
+function getLocalData(key, fallback = []) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch (e) {
+    return fallback;
+  }
+}
+
+function setLocalData(key, val) {
+  try {
+    localStorage.setItem(key, JSON.stringify(val));
+  } catch (e) {}
+}
+
+let appsCache = getLocalData(CACHE_APPS_KEY, []);
 let votesAgg = {};   
 let myVotes = {};    
-let reportsCache = [];
+let reportsCache = getLocalData(CACHE_REPORTS_KEY, []);
 let isAdmin = false;
 
 const DEVICE_KEY = 'upi_device_id';
@@ -795,6 +822,22 @@ if (!deviceId) {
   localStorage.setItem(DEVICE_KEY, deviceId);
 }
 
+function computeVoteState(rawVotes) {
+  votesAgg = {};
+  myVotes = {};
+  (rawVotes || []).forEach(v => {
+    if (!votesAgg[v.app_id]) votesAgg[v.app_id] = { working: 0, not_working: 0 };
+    if (votesAgg[v.app_id][v.vote_type] !== undefined) votesAgg[v.app_id][v.vote_type]++;
+    if (v.device_id === deviceId) myVotes[v.app_id] = v.vote_type;
+  });
+}
+
+// Pre-compute cached vote data immediately on load
+computeVoteState(getLocalData(CACHE_VOTES_KEY, []));
+
+/* ============================================================
+   4. UTILITIES
+   ============================================================ */
 function escapeHtml(str) {
   return String(str ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
@@ -872,14 +915,14 @@ function appIconHtml(app, sizeClass = '') {
 function uid() { return crypto.randomUUID ? crypto.randomUUID() : 'id' + Date.now() + Math.random().toString(36).slice(2); }
 
 /* ============================================================
-   4. LOCAL MATRIX STORAGE
+   5. LOCAL MATRIX STORAGE
    ============================================================ */
 const FRIENDS_KEY = 'upi_referral_friends_v2';
 const MATRIX_KEY = 'upi_referral_matrix_v2';
-function loadFriends() { try { return JSON.parse(localStorage.getItem(FRIENDS_KEY)) || []; } catch { return []; } }
-function saveFriends(list) { localStorage.setItem(FRIENDS_KEY, JSON.stringify(list)); }
-function loadMatrix() { try { return JSON.parse(localStorage.getItem(MATRIX_KEY)) || []; } catch { return []; } }
-function saveMatrix(list) { localStorage.setItem(MATRIX_KEY, JSON.stringify(list)); }
+function loadFriends() { return getLocalData(FRIENDS_KEY, []); }
+function saveFriends(list) { setLocalData(FRIENDS_KEY, list); }
+function loadMatrix() { return getLocalData(MATRIX_KEY, []); }
+function saveMatrix(list) { setLocalData(MATRIX_KEY, list); }
 
 function addFriend(name) {
   const list = loadFriends();
@@ -915,7 +958,7 @@ function getReferralCountForApp(appId) {
 }
 
 /* ============================================================
-   5. RENDERING
+   6. RENDERING
    ============================================================ */
 function renderStats() {
   statTotalApps.textContent = appsCache.length;
@@ -1144,11 +1187,12 @@ function renderReportsList() {
 }
 
 /* ============================================================
-   6. FIRESTORE REALTIME LISTENERS
+   7. FIRESTORE REALTIME LISTENERS & LOCAL SYNC
    ============================================================ */
 function listenApps() {
   db.collection('apps').orderBy('created_at', 'desc').onSnapshot(snap => {
     appsCache = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    setLocalData(CACHE_APPS_KEY, appsCache);
     renderCategoryOptions();
     renderApps();
     renderStats();
@@ -1158,13 +1202,9 @@ function listenApps() {
 
 function listenVotes() {
   db.collection('votes').onSnapshot(snap => {
-    votesAgg = {}; myVotes = {};
-    snap.docs.forEach(doc => {
-      const v = doc.data();
-      if (!votesAgg[v.app_id]) votesAgg[v.app_id] = { working: 0, not_working: 0 };
-      if (votesAgg[v.app_id][v.vote_type] !== undefined) votesAgg[v.app_id][v.vote_type]++;
-      if (v.device_id === deviceId) myVotes[v.app_id] = v.vote_type;
-    });
+    const rawVotes = snap.docs.map(doc => doc.data());
+    setLocalData(CACHE_VOTES_KEY, rawVotes);
+    computeVoteState(rawVotes);
     renderApps();
     renderStats();
   }, err => toast('Error fetching votes: ' + err.message, 'error'));
@@ -1173,6 +1213,7 @@ function listenVotes() {
 function listenReports() {
   db.collection('reports').orderBy('created_at', 'desc').onSnapshot(snap => {
     reportsCache = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    setLocalData(CACHE_REPORTS_KEY, reportsCache);
     reportsBadge.hidden = reportsCache.length === 0;
     reportsBadge.textContent = reportsCache.length;
     renderReportsList();
@@ -1180,23 +1221,35 @@ function listenReports() {
 }
 
 /* ============================================================
-   7. VOTING
+   8. VOTING
    ============================================================ */
 async function castVote(appId, voteType) {
   try {
     const docId = `${appId}_${deviceId}`;
-    await db.collection('votes').doc(docId).set({
+    const voteData = {
       app_id: appId,
       device_id: deviceId,
       vote_type: voteType,
       updated_at: new Date().toISOString()
-    });
+    };
+    await db.collection('votes').doc(docId).set(voteData);
+
+    // Optimistically update local cache & UI
+    const cachedVotes = getLocalData(CACHE_VOTES_KEY, []);
+    const idx = cachedVotes.findIndex(v => v.app_id === appId && v.device_id === deviceId);
+    if (idx > -1) cachedVotes[idx] = voteData;
+    else cachedVotes.push(voteData);
+    setLocalData(CACHE_VOTES_KEY, cachedVotes);
+    computeVoteState(cachedVotes);
+    renderApps();
+    renderStats();
+
     toast('Thanks for voting!', 'success');
   } catch (err) { toast('Could not save vote: ' + err.message, 'error'); }
 }
 
 /* ============================================================
-   8. ADD / EDIT APP
+   9. ADD / EDIT APP
    ============================================================ */
 function wireBonusToggle(name, fixedRowId, rangeRowId) {
   document.querySelectorAll(`input[name="${name}"]`).forEach(r => r.addEventListener('change', () => {
@@ -1321,7 +1374,7 @@ addAppForm.addEventListener('submit', async (e) => {
 });
 
 /* ============================================================
-   9. REPORTING
+   10. REPORTING
    ============================================================ */
 function openReportModal(app) {
   reportAppId.value = app.id;
@@ -1343,7 +1396,7 @@ reportForm.addEventListener('submit', async (e) => {
 });
 
 /* ============================================================
-   10. ADMIN AUTH & CONTROLS
+   11. ADMIN AUTH & CONTROLS (With User Creation Fallback)
    ============================================================ */
 function setAdminState(loggedIn) {
   isAdmin = loggedIn;
@@ -1364,15 +1417,38 @@ function setAdminState(loggedIn) {
 }
 
 adminLoginBtn.addEventListener('click', () => openModal('adminLoginModalBackdrop'));
+
 adminLoginForm.addEventListener('submit', async (e) => {
   e.preventDefault();
+  const email = adminEmail.value.trim();
+  const password = adminPassword.value;
+  adminSubmitBtn.disabled = true;
+
   try {
-    await auth.signInWithEmailAndPassword(adminEmail.value.trim(), adminPassword.value);
+    // 1. Try Signing In
+    await auth.signInWithEmailAndPassword(email, password);
     toast('Signed in as admin', 'success');
     closeModal('adminLoginModalBackdrop');
     adminLoginForm.reset();
-  } catch (err) { toast('Sign-in failed: ' + err.message, 'error'); }
+  } catch (err) {
+    // 2. If user doesn't exist, create it automatically
+    if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
+      try {
+        await auth.createUserWithEmailAndPassword(email, password);
+        toast('Admin account created & signed in!', 'success');
+        closeModal('adminLoginModalBackdrop');
+        adminLoginForm.reset();
+      } catch (signupErr) {
+        toast('Sign in failed: ' + err.message, 'error');
+      }
+    } else {
+      toast('Sign in failed: ' + err.message, 'error');
+    }
+  } finally {
+    adminSubmitBtn.disabled = false;
+  }
 });
+
 adminLogoutBtn.addEventListener('click', async () => {
   await auth.signOut();
   toast('Signed out', 'success');
@@ -1407,7 +1483,7 @@ reportsList.addEventListener('click', async (e) => {
 });
 
 /* ============================================================
-   11. MATRIX & UI DELEGATION
+   12. MATRIX & UI DELEGATION
    ============================================================ */
 function trackReferral(app) {
   showPanel('ledger');
@@ -1593,7 +1669,7 @@ themeToggle.addEventListener('click', () => {
 });
 
 /* ============================================================
-   12. INIT
+   13. INITIALIZATION
    ============================================================ */
 function init() {
   if (!isConfigured) {
@@ -1604,6 +1680,15 @@ function init() {
     emptyAddBtn.hidden = true;
     return;
   }
+
+  // 1. Render immediately from local storage cache (zero loading latency)
+  if (appsCache.length > 0) {
+    renderCategoryOptions();
+    renderApps();
+    renderStats();
+  }
+
+  // 2. Attach Auth & Realtime Firebase Listeners
   auth.onAuthStateChanged(user => setAdminState(!!user));
   listenApps();
   listenVotes();
