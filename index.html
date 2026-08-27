@@ -56,10 +56,6 @@
     background:var(--stamp-soft); color:var(--stamp); border-bottom:1px solid var(--stamp);
     text-align:center; padding:10px 16px; font-size:14px; font-family:var(--font-body);
   }
-  .migration-banner{
-    background:var(--gold-soft); color:var(--gold); border-bottom:1px dashed var(--gold);
-    display:flex; align-items:center; justify-content:center; gap:12px; padding:10px 16px; font-size:13.5px;
-  }
 
   /* ===== HEADER ===== */
   .site-header{ background:var(--ink); color:var(--paper); position:sticky; top:0; z-index:30; box-shadow:var(--shadow);}
@@ -323,12 +319,7 @@
 <body data-theme="light">
 
 <div id="connBanner" class="conn-banner" hidden>
-  ⚠️ <strong>Not connected yet.</strong> Replace the <code>firebaseConfig</code> values inside <code>index.html</code> with your Firebase project credentials.
-</div>
-
-<div id="migrationBanner" class="migration-banner" hidden>
-  📦 <strong>Firestore is empty.</strong> Ready to import your 6 apps &amp; 12 votes from Supabase?
-  <button id="runMigrationBtn" class="primary-btn" style="padding:4px 12px; font-size:12px;">Import Data Now</button>
+  ⚠️ <strong>Not connected yet.</strong> Verify your <code>firebaseConfig</code> credentials inside <code>index.html</code>.
 </div>
 
 <header class="site-header">
@@ -688,9 +679,6 @@ if (isConfigured) {
 const $ = (id) => document.getElementById(id);
 
 const connBanner = $('connBanner');
-const migrationBanner = $('migrationBanner');
-const runMigrationBtn = $('runMigrationBtn');
-
 const themeToggle = $('themeToggle');
 const adminLoginBtn = $('adminLoginBtn');
 const adminBar = $('adminBar');
@@ -1161,11 +1149,6 @@ function renderReportsList() {
 function listenApps() {
   db.collection('apps').orderBy('created_at', 'desc').onSnapshot(snap => {
     appsCache = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    if (appsCache.length === 0) {
-      migrationBanner.hidden = false;
-    } else {
-      migrationBanner.hidden = true;
-    }
     renderCategoryOptions();
     renderApps();
     renderStats();
@@ -1197,154 +1180,7 @@ function listenReports() {
 }
 
 /* ============================================================
-   7. DATA MIGRATION HELPER
-   ============================================================ */
-const SUPABASE_APPS = [
-  {
-    "id": "05a3e37d-14e2-436e-916f-2c95aa4c6b4e",
-    "name": "Navi",
-    "category": null,
-    "joining_type": "none",
-    "joining_min": 0,
-    "joining_max": 0,
-    "referral_type": "fixed",
-    "referral_min": 100,
-    "referral_max": 100,
-    "notes": "Day 1 Rs 60.\nDay 3 Rs 20.\nDay 5 Rs 20",
-    "added_by": "Anonymous",
-    "verified_by_admin": true,
-    "created_at": "2026-06-22 04:57:41.130138+00",
-    "icon_url": "https://bkjgxhbiomeuasexpxru.supabase.co/storage/v1/object/public/app-icons/icons/1782104258903_ucymz.png"
-  },
-  {
-    "id": "4efcae9f-2871-4716-b3d5-deb90c813a7a",
-    "name": "Gpay",
-    "category": null,
-    "joining_type": "fixed",
-    "joining_min": 21,
-    "joining_max": 21,
-    "referral_type": "fixed",
-    "referral_min": 151,
-    "referral_max": 151,
-    "notes": "Rs 51 on first payment \nRs 25 for first 4 weeks",
-    "added_by": "Anonymous",
-    "verified_by_admin": true,
-    "created_at": "2026-06-22 05:31:19.20485+00",
-    "icon_url": "https://bkjgxhbiomeuasexpxru.supabase.co/storage/v1/object/public/app-icons/icons/1782106314455_rxxp8.webp"
-  },
-  {
-    "id": "78164a77-96c0-4e0c-a16e-1fbf1d133ad0",
-    "name": "BHIM",
-    "category": null,
-    "joining_type": "none",
-    "joining_min": 0,
-    "joining_max": 0,
-    "referral_type": "range",
-    "referral_min": 0,
-    "referral_max": 200,
-    "notes": null,
-    "added_by": "Anonymous",
-    "verified_by_admin": true,
-    "created_at": "2026-06-22 05:33:04.884459+00",
-    "icon_url": "https://bkjgxhbiomeuasexpxru.supabase.co/storage/v1/object/public/app-icons/icons/1782106383352_2aufm.png"
-  },
-  {
-    "id": "83974661-9ccc-4575-b541-7a43609c8444",
-    "name": "MobiKwik",
-    "category": null,
-    "joining_type": "fixed",
-    "joining_min": 25,
-    "joining_max": 25,
-    "referral_type": "range",
-    "referral_min": 50,
-    "referral_max": 100,
-    "notes": null,
-    "added_by": "Anonymous",
-    "verified_by_admin": true,
-    "created_at": "2026-06-22 05:34:04.819777+00",
-    "icon_url": "https://bkjgxhbiomeuasexpxru.supabase.co/storage/v1/object/public/app-icons/icons/1782106443425_t8k4d.png"
-  },
-  {
-    "id": "91d253b7-54fe-4f5d-a0b9-af13e2bb292f",
-    "name": "Phone pay",
-    "category": null,
-    "joining_type": "none",
-    "joining_min": 0,
-    "joining_max": 0,
-    "referral_type": "fixed",
-    "referral_min": 200,
-    "referral_max": 200,
-    "notes": null,
-    "added_by": "Anonymous",
-    "verified_by_admin": true,
-    "created_at": "2026-06-22 05:34:49.030999+00",
-    "icon_url": "https://bkjgxhbiomeuasexpxru.supabase.co/storage/v1/object/public/app-icons/icons/1782106487532_3j5f9.png"
-  },
-  {
-    "id": "a19d5c4a-0dfb-4655-841b-fad5ce48bbb1",
-    "name": "Paytm",
-    "category": null,
-    "joining_type": "none",
-    "joining_min": 0,
-    "joining_max": 0,
-    "referral_type": "range",
-    "referral_min": 0,
-    "referral_max": 200,
-    "notes": null,
-    "added_by": "Anonymous",
-    "verified_by_admin": true,
-    "created_at": "2026-06-20 19:44:03.221539+00",
-    "icon_url": null
-  }
-];
-
-const SUPABASE_VOTES = [
-  { "id": "06e9ad79-09f3-40a4-94c2-0cbdd72fa7c6", "app_id": "a19d5c4a-0dfb-4655-841b-fad5ce48bbb1", "device_id": "2c746e3e-5e1a-4f9e-815d-54b422d1de01", "vote_type": "working", "created_at": "2026-06-20 19:44:33.626766+00" },
-  { "id": "7d7edc0b-a122-423c-9ef3-6bd6fe80e040", "app_id": "05a3e37d-14e2-436e-916f-2c95aa4c6b4e", "device_id": "0a596b64-305f-419d-9c75-fc530c5ed5ad", "vote_type": "working", "created_at": "2026-06-24 16:07:32.632692+00" },
-  { "id": "7dc1d6ec-f060-455f-844c-61b8a952368f", "app_id": "a19d5c4a-0dfb-4655-841b-fad5ce48bbb1", "device_id": "b894eaff-1492-421b-8224-3f34f434a963", "vote_type": "working", "created_at": "2026-06-20 19:46:13.305826+00" },
-  { "id": "0dae18c6-23fe-4b13-a417-64491c28c89b", "app_id": "05a3e37d-14e2-436e-916f-2c95aa4c6b4e", "device_id": "73ff32cf-4b71-420b-ae9b-ab00e28ebec0", "vote_type": "working", "created_at": "2026-06-22 07:05:44.871183+00" },
-  { "id": "673f32e6-c14d-4bc9-93e1-381fe21b66df", "app_id": "05a3e37d-14e2-436e-916f-2c95aa4c6b4e", "device_id": "677d2fa9-e5fe-4f81-9b16-43b44b9347fb", "vote_type": "working", "created_at": "2026-06-24 16:03:00.672909+00" },
-  { "id": "5fa23fa9-bb33-4df4-8d96-bbf21221b65e", "app_id": "05a3e37d-14e2-436e-916f-2c95aa4c6b4e", "device_id": "da44fe1a-d069-450f-ad7c-7d94cfbf3b01", "vote_type": "working", "created_at": "2026-06-23 13:02:40.852158+00" },
-  { "id": "92fefdf2-3863-4416-8321-df3daae5feeb", "app_id": "05a3e37d-14e2-436e-916f-2c95aa4c6b4e", "device_id": "8bb38bb4-0985-452f-a65c-3a32f62daef8", "vote_type": "working", "created_at": "2026-06-23 13:01:21.057531+00" },
-  { "id": "b47dbff9-6d5a-4712-8874-98403d1544a8", "app_id": "a19d5c4a-0dfb-4655-841b-fad5ce48bbb1", "device_id": "da44fe1a-d069-450f-ad7c-7d94cfbf3b01", "vote_type": "working", "created_at": "2026-06-23 13:02:47.375685+00" },
-  { "id": "31f47d8b-efb2-4d2d-8ae5-df3c51ffebfa", "app_id": "05a3e37d-14e2-436e-916f-2c95aa4c6b4e", "device_id": "766ef968-3be3-485a-8b89-216a3cbbaaf9", "vote_type": "working", "created_at": "2026-06-24 16:03:09.110291+00" },
-  { "id": "4da47900-53b4-4b53-b26e-44d715df2dfb", "app_id": "05a3e37d-14e2-436e-916f-2c95aa4c6b4e", "device_id": "887fa54c-83b3-4fe7-8738-4ea788ebddff", "vote_type": "working", "created_at": "2026-06-24 16:02:40.404286+00" },
-  { "id": "820d880c-03d1-4cb5-aa38-769fb4fb7465", "app_id": "05a3e37d-14e2-436e-916f-2c95aa4c6b4e", "device_id": "e25fdb58-29cb-4340-9fe4-16a7e0f22ee8", "vote_type": "working", "created_at": "2026-06-24 16:02:49.034785+00" },
-  { "id": "2daefbb7-6e9c-4914-bc48-6a3f0190cfda", "app_id": "05a3e37d-14e2-436e-916f-2c95aa4c6b4e", "device_id": "e5ea0553-9076-47b2-bdcf-8ea9c8112fb9", "vote_type": "working", "created_at": "2026-06-23 13:00:46.402687+00" }
-];
-
-async function runDataMigration() {
-  runMigrationBtn.disabled = true;
-  runMigrationBtn.textContent = 'Importing...';
-  try {
-    const batch = db.batch();
-
-    SUPABASE_APPS.forEach(app => {
-      const { id, ...data } = app;
-      const ref = db.collection('apps').doc(id);
-      batch.set(ref, data);
-    });
-
-    SUPABASE_VOTES.forEach(vote => {
-      const docId = `${vote.app_id}_${vote.device_id}`;
-      const ref = db.collection('votes').doc(docId);
-      batch.set(ref, vote);
-    });
-
-    await batch.commit();
-    toast('Migration complete! Data imported to Firebase.', 'success');
-    migrationBanner.hidden = true;
-  } catch (err) {
-    toast('Migration failed: ' + err.message, 'error');
-  } finally {
-    runMigrationBtn.disabled = false;
-    runMigrationBtn.textContent = 'Import Data Now';
-  }
-}
-runMigrationBtn.addEventListener('click', runDataMigration);
-
-/* ============================================================
-   8. VOTING
+   7. VOTING
    ============================================================ */
 async function castVote(appId, voteType) {
   try {
@@ -1360,7 +1196,7 @@ async function castVote(appId, voteType) {
 }
 
 /* ============================================================
-   9. ADD / EDIT APP
+   8. ADD / EDIT APP
    ============================================================ */
 function wireBonusToggle(name, fixedRowId, rangeRowId) {
   document.querySelectorAll(`input[name="${name}"]`).forEach(r => r.addEventListener('change', () => {
@@ -1485,7 +1321,7 @@ addAppForm.addEventListener('submit', async (e) => {
 });
 
 /* ============================================================
-   10. REPORTING
+   9. REPORTING
    ============================================================ */
 function openReportModal(app) {
   reportAppId.value = app.id;
@@ -1507,7 +1343,7 @@ reportForm.addEventListener('submit', async (e) => {
 });
 
 /* ============================================================
-   11. ADMIN AUTH & CONTROLS
+   10. ADMIN AUTH & CONTROLS
    ============================================================ */
 function setAdminState(loggedIn) {
   isAdmin = loggedIn;
@@ -1571,7 +1407,7 @@ reportsList.addEventListener('click', async (e) => {
 });
 
 /* ============================================================
-   12. MATRIX & UI DELEGATION
+   11. MATRIX & UI DELEGATION
    ============================================================ */
 function trackReferral(app) {
   showPanel('ledger');
@@ -1757,7 +1593,7 @@ themeToggle.addEventListener('click', () => {
 });
 
 /* ============================================================
-   13. INIT
+   12. INIT
    ============================================================ */
 function init() {
   if (!isConfigured) {
