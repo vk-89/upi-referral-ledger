@@ -154,10 +154,9 @@
     font-family:var(--font-display); font-weight:700; font-size:12px; color:#fff;
     background:var(--green); line-height:1;
   }
-  /* FIX: Force white background specifically on image tags so transparent PNGs don't show green */
   img.app-icon {
     background: #FFFFFF !important;
-    object-fit: contain; /* Prevents logos from being cut off at edges */
+    object-fit: contain;
   }
   
   .app-icon.lg{ width:44px; height:44px; border-radius:11px; font-size:16px; }
@@ -229,6 +228,12 @@
   .matrix-table{ border-collapse:separate; border-spacing:0; width:100%; }
   .matrix-table th, .matrix-table td{ border-bottom:1px dashed var(--line); border-right:1px dashed var(--line); padding:0; }
   .matrix-table thead th{ background:var(--paper-alt); padding:6px 4px 8px; vertical-align:bottom; }
+  
+  /* Bug 1 Fix: CSS for Matrix App Column Headers */
+  .matrix-app-head{ padding:6px 4px 8px; text-align:center; font-size:11px; }
+  .matrix-app-head .app-head-name{ display:block; margin-top:2px; font-family:var(--font-display); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:70px; }
+  .matrix-total-head{ min-width:60px; }
+
   .matrix-corner{
     position:sticky; left:0; z-index:3; background:var(--paper-alt);
     min-width:140px; text-align:left; padding:8px 12px !important; font-size:11px; color:var(--ink-soft); font-weight:600;
@@ -480,14 +485,12 @@
         </datalist>
       </label>
       
-      <!-- FEATURE 1: Base64 File Upload -->
       <div id="adminIconUploadSection" class="file-input-wrapper" hidden>
         <label>Upload App Icon (Auto-compresses & stores in database)
           <input id="f_file" type="file" accept="image/png, image/jpeg, image/webp">
         </label>
       </div>
       
-      <!-- FEATURE 2: URL Pasting -->
       <label id="urlIconLabel">App icon URL (optional)
         <input id="f_icon" type="text" placeholder="https://example.com/logo.png">
       </label>
@@ -797,8 +800,8 @@ function setLocalData(key, val) {
 }
 
 let appsCache = getLocalData(CACHE_APPS_KEY, []);
-let votesAgg = {};   
-let myVotes = {};    
+let votesAgg = {};
+let myVotes = {};
 let reportsCache = getLocalData(CACHE_REPORTS_KEY, []);
 let isAdmin = false;
 
@@ -1239,10 +1242,6 @@ function wireBonusToggle(name, fixedRowId, rangeRowId) {
 wireBonusToggle('joiningType', 'joinFixedRow', 'joinRangeRow');
 wireBonusToggle('referralType', 'refFixedRow', 'refRangeRow');
 
-
-// ------------------------------------------------------------------
-// Base64 Image Compression Logic
-// ------------------------------------------------------------------
 function updateIconPreview(base64Data = null) {
   const urlToUse = base64Data || f_icon.value.trim();
   iconPreview.innerHTML = appIconHtml({ name: f_name.value.trim() || '?', icon_url: urlToUse }, 'lg');
@@ -1250,16 +1249,16 @@ function updateIconPreview(base64Data = null) {
 
 f_name.addEventListener('input', () => updateIconPreview(compressedBase64Icon));
 f_icon.addEventListener('input', () => {
-  compressedBase64Icon = null; // Clear upload if user types a URL
+  compressedBase64Icon = null;
   f_file.value = '';
   updateIconPreview();
 });
 
+/* Bug 3 Fix: Do not wipe compressedBase64Icon if file selection is cancelled */
 f_file.addEventListener('change', (e) => {
   const file = e.target.files && e.target.files[0];
   if (!file) {
-    compressedBase64Icon = null;
-    updateIconPreview();
+    updateIconPreview(compressedBase64Icon);
     return;
   }
   
@@ -1273,7 +1272,6 @@ f_file.addEventListener('change', (e) => {
       canvas.height = MAX_SIZE;
       
       const ctx = canvas.getContext('2d');
-      // Set white background so transparent images don't turn black
       ctx.fillStyle = '#FFFFFF';
       ctx.fillRect(0, 0, MAX_SIZE, MAX_SIZE);
       
@@ -1283,14 +1281,13 @@ f_file.addEventListener('change', (e) => {
       ctx.drawImage(img, startX, startY, size, size, 0, 0, MAX_SIZE, MAX_SIZE);
       
       compressedBase64Icon = canvas.toDataURL('image/jpeg', 0.85);
-      f_icon.value = ''; // Clear URL input so file wins
+      f_icon.value = '';
       updateIconPreview(compressedBase64Icon);
     };
     img.src = event.target.result;
   };
   reader.readAsDataURL(file);
 });
-// ------------------------------------------------------------------
 
 function openAddModal() {
   addAppForm.reset();
@@ -1362,7 +1359,6 @@ addAppForm.addEventListener('submit', async (e) => {
   try {
     addAppSubmitBtn.disabled = true;
     
-    // Check if there is an uploaded base64 icon, otherwise use the pasted URL
     let finalIconUrl = null;
     if (compressedBase64Icon) {
       finalIconUrl = compressedBase64Icon;
@@ -1622,18 +1618,20 @@ function launchAddFriendModal() {
 addFriendBtn.addEventListener('click', launchAddFriendModal);
 emptyAddFriendBtn.addEventListener('click', launchAddFriendModal);
 
+/* Bug 2 Fix: Prevent duplicate names when renaming as well as adding */
 addFriendForm.addEventListener('submit', (e) => {
   e.preventDefault();
   const name = addFriendNameInput.value.trim();
   if (!name) return;
+  const dup = loadFriends().some(f => f.name.toLowerCase() === name.toLowerCase() && f.id !== editFriendId.value);
+  if (dup) {
+    toast('That friend is already in your grid', 'error');
+    return;
+  }
   if (editFriendId.value) {
     renameFriend(editFriendId.value, name);
     toast('Friend name updated', 'success');
   } else {
-    if (loadFriends().some(f => f.name.toLowerCase() === name.toLowerCase())) {
-      toast('That friend is already in your grid', 'error');
-      return;
-    }
     addFriend(name);
     toast(`${name} added to the grid`, 'success');
   }
