@@ -874,20 +874,31 @@ function colorForName(name) {
   for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) % AVATAR_COLORS.length;
   return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length];
 }
+
+// ----------------------------------------------------
+// Updated appIconHtml function (Fallback fix + hotlink bypassing)
+// ----------------------------------------------------
 function appIconHtml(app, sizeClass = '') {
   const name = app.name || '?';
   const letter = name.trim().charAt(0).toUpperCase() || '?';
   const bg = colorForName(name);
   const safeName = escapeHtml(name);
   const url = (app.icon_url || '').trim();
+
   if (url) {
     const safeUrl = escapeHtml(url);
-    return `<span class="app-icon-wrap">
-      <img class="app-icon ${sizeClass}" src="${safeUrl}" alt="${safeName} icon" loading="lazy"
-           onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-flex';">
-      <span class="app-icon ${sizeClass}" style="background:${bg}; display:none;">${letter}</span>
-    </span>`;
+    return `
+      <span class="app-icon-wrap" style="position:relative; display:inline-flex;">
+        <img class="app-icon ${sizeClass}" 
+             src="${safeUrl}" 
+             alt="${safeName} icon" 
+             loading="lazy"
+             referrerpolicy="no-referrer"
+             onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-flex';">
+        <span class="app-icon ${sizeClass}" style="background:${bg}; display:none;">${letter}</span>
+      </span>`;
   }
+
   return `<span class="app-icon-wrap"><span class="app-icon ${sizeClass}" style="background:${bg}">${letter}</span></span>`;
 }
 function uid() { return crypto.randomUUID ? crypto.randomUUID() : 'id' + Date.now() + Math.random().toString(36).slice(2); }
@@ -1305,15 +1316,21 @@ addAppForm.addEventListener('submit', async (e) => {
     addAppSubmitBtn.disabled = true;
     let finalIconUrl = f_icon.value.trim() || null;
 
-    if (isAdmin && f_file.files && f_file.files.length > 0 && storage) {
+    // ----------------------------------------------------
+    // Updated robust file upload logic
+    // ----------------------------------------------------
+    if (isAdmin && f_file.files && f_file.files.length > 0) {
+      if (!storage) {
+        throw new Error('Firebase Storage is not initialized.');
+      }
       const file = f_file.files[0];
       const fileExt = file.name.split('.').pop() || 'png';
       const fileName = `${Date.now()}_${Math.random().toString(36).slice(2, 7)}.${fileExt}`;
       const fileRef = storage.ref(`icons/${fileName}`);
 
-      toast('Uploading icon image assets...', 'info');
-      await fileRef.put(file);
-      finalIconUrl = await fileRef.getDownloadURL();
+      toast('Uploading icon image...', 'info');
+      const uploadTask = await fileRef.put(file);
+      finalIconUrl = await uploadTask.ref.getDownloadURL();
     }
 
     const payload = {
