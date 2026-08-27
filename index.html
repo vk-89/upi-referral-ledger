@@ -57,7 +57,6 @@
     text-align:center; padding:10px 16px; font-size:14px; font-family:var(--font-body);
   }
 
-  /* ===== HEADER ===== */
   .site-header{ background:var(--ink); color:var(--paper); position:sticky; top:0; z-index:30; box-shadow:var(--shadow);}
   [data-theme="dark"] .site-header{ background:#0E1716; }
   .header-inner{ max-width:1080px; margin:0 auto; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; gap:16px;}
@@ -79,7 +78,6 @@
   [data-theme="dark"] .admin-bar{ color:var(--ink); }
   .admin-chip{ font-family:var(--font-mono); font-weight:600; background:var(--gold); color:#241a02; padding:3px 10px; border-radius:20px; font-size:12px; letter-spacing:.5px;}
 
-  /* ===== BUTTONS ===== */
   .primary-btn, .ghost-btn, .danger-btn, .icon-btn{
     font-family:var(--font-body); font-weight:600; cursor:pointer; border:none;
     border-radius:10px; padding:10px 16px; font-size:14px; transition:transform .12s ease, filter .12s ease;
@@ -94,9 +92,7 @@
   .danger-btn:hover{ filter:brightness(1.1); }
   .icon-btn{ background:transparent; color:inherit; font-size:18px; padding:6px 9px; border-radius:8px; }
   .icon-btn:hover{ background:rgba(255,255,255,.12); }
-  button{ font-family:inherit; }
 
-  /* ===== CONTAINER / STATS ===== */
   .container{ max-width:1080px; margin:0 auto; padding:12px 20px 40px; }
   .stats-strip{
     display:grid; grid-template-columns:repeat(4,1fr); gap:0;
@@ -111,7 +107,6 @@
   .stat-label{ font-size:11px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.4px;}
   @media (max-width:680px){ .stats-strip{ grid-template-columns:repeat(2,1fr); } .stat-item{ border-bottom:1px dashed var(--line);} }
 
-  /* ===== TABS ===== */
   .tabs{ display:flex; gap:8px; margin-bottom:14px; border-bottom:1px solid var(--line); }
   .tab-btn{
     background:none; border:none; padding:8px 4px; margin-right:14px; font-family:var(--font-display);
@@ -119,7 +114,6 @@
   }
   .tab-btn.active{ color:var(--ink); border-bottom-color:var(--green); }
 
-  /* ===== CONTROLS ===== */
   .controls-bar{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; align-items:center; }
   .controls-bar input[type="search"], .controls-bar select, .controls-bar input[type="text"]{
     font-family:var(--font-body); padding:8px 12px; border-radius:10px; border:1.5px solid var(--line);
@@ -128,14 +122,12 @@
   #searchInput{ flex:1 1 200px; min-width:150px; }
   .checkbox-pill{ display:flex; align-items:center; gap:6px; font-size:13px; color:var(--ink-soft); background:var(--paper-raised); border:1.5px solid var(--line); border-radius:20px; padding:6px 12px; }
 
-  /* ===== LOADING / EMPTY ===== */
   .loading-state{ display:flex; flex-direction:column; gap:8px; }
   .skeleton-row{ height:64px; border-radius:var(--radius); background:linear-gradient(90deg,var(--paper-alt) 25%, var(--line-soft) 37%, var(--paper-alt) 63%); background-size:400% 100%; animation:shimmer 1.4s infinite; }
   @keyframes shimmer{ 0%{background-position:100% 0;} 100%{background-position:-100% 0;} }
   .empty-state{ text-align:center; padding:40px 20px; color:var(--ink-soft); }
   .empty-state p{ font-size:14.5px; margin-bottom:12px; }
 
-  /* ===== LEDGER LIST / ROWS ===== */
   .ledger-list{ background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; }
   .ledger-row{
     display:grid; grid-template-columns:42px 1.6fr 1fr 1fr 70px auto; gap:12px; align-items:center;
@@ -155,7 +147,6 @@
   .badge-category{ background:var(--paper-alt); color:var(--ink-soft); }
   .badge-top{ background:var(--gold); color:#2b2106; }
 
-  /* ===== APP ICON ===== */
   .app-icon-wrap{ display:inline-flex; flex-shrink:0; }
   .app-icon{
     width:28px; height:28px; border-radius:8px; object-fit:cover; flex-shrink:0;
@@ -209,7 +200,6 @@
     .row-actions{ margin-top:4px; }
   }
 
-  /* ===== REFERRAL MATRIX ===== */
   .ledger-intro h2{ font-family:var(--font-display); margin:0 0 4px; }
   .ledger-intro p{ color:var(--ink-soft); font-size:13.5px; margin:0 0 14px; }
 
@@ -218,7 +208,6 @@
     font-family:var(--font-body); padding:8px 12px; border-radius:10px; border:1.5px solid var(--line);
     background:var(--paper-raised); color:var(--ink); font-size:13.5px; flex:1 1 160px; min-width:130px;
   }
-  .matrix-toolbar .primary-btn{ flex:0 0 auto; }
 
   .matrix-legend{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
   .legend-chip{ font-size:11px; font-weight:600; padding:4px 8px; border-radius:20px; border:1px solid transparent; white-space:nowrap; }
@@ -265,6 +254,12 @@
   .matrix-total-cell{ text-align:center; font-family:var(--font-mono); font-size:10px; padding:6px 4px; line-height:1.4; }
   .matrix-friend-total{ font-family:var(--font-mono); font-size:10.5px; text-align:center; padding:6px 8px; color:var(--ink-soft); line-height:1.4; }
 
+  .col-flash { animation: flashPulse 1.5s ease-out; }
+  @keyframes flashPulse {
+    0% { background-color: var(--gold-soft); }
+    100% { background-color: var(--paper-alt); }
+  }
+
   .matrix-summary{ display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
   .summary-card{ background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius-sm); padding:10px 16px; box-shadow:var(--shadow); flex:1 1 130px; text-align:center; }
   .summary-card .num{ display:block; font-family:var(--font-mono); font-weight:700; font-size:16px; color:var(--green-deep); }
@@ -276,7 +271,6 @@
     .matrix-corner, .matrix-friend-cell{ min-width:115px; max-width:135px; }
   }
 
-  /* ===== MODALS ===== */
   .modal-backdrop{
     position:fixed; inset:0; background:rgba(15,20,20,.55); display:flex; align-items:center; justify-content:center;
     padding:20px; z-index:100; backdrop-filter:blur(2px);
@@ -300,7 +294,6 @@
   .modal-actions{ display:flex; justify-content:flex-end; gap:10px; margin-top:4px; }
   .confirm-message{ font-size:15px; margin:6px 0 18px; }
 
-  /* ===== TOASTS ===== */
   .toast-container{ position:fixed; bottom:20px; left:50%; transform:translateX(-50%); display:flex; flex-direction:column; gap:8px; z-index:200; width:min(360px,90vw); }
   .toast{
     background:var(--ink); color:var(--paper); padding:12px 16px; border-radius:10px; font-size:13.5px;
@@ -311,7 +304,6 @@
   @keyframes toastIn{ from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
   .count-badge{ background:var(--stamp); color:#fff; font-size:10.5px; font-weight:700; border-radius:10px; padding:1px 6px; margin-left:4px; }
 
-  /* ===== FOOTER ===== */
   .site-footer{ text-align:center; padding:24px 20px 40px; color:var(--ink-faint); font-size:12px; max-width:680px; margin:0 auto; }
   .footer-fine{ margin-top:4px; }
 </style>
@@ -619,7 +611,7 @@
 <div class="modal-backdrop" id="adminLoginModalBackdrop" hidden>
   <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="adminLoginTitle">
     <div class="modal-head">
-      <h3 id="adminLoginTitle">🔐 Admin sign in / create account</h3>
+      <h3 id="adminLoginTitle">🔐 Admin sign in</h3>
       <button class="icon-btn" data-close="adminLoginModalBackdrop" aria-label="Close">✕</button>
     </div>
     <form id="adminLoginForm" class="modal-form">
@@ -643,16 +635,12 @@
   </div>
 </div>
 
-<!-- Firebase Compat CDNs -->
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
 
 <script>
-/* ============================================================
-   1. FIREBASE CONFIGURATION
-   ============================================================ */
 const firebaseConfig = {
   apiKey: "AIzaSyBK5qMGiDmNmZvXaoZL-4ADiScP7Mkhfns",
   authDomain: "freemoney-cb6b4.firebaseapp.com",
@@ -672,17 +660,13 @@ if (isConfigured) {
   db = firebase.firestore();
   storage = firebase.storage();
   
-  // Enable persistent offline caching for Firestore
   db.enablePersistence({ synchronizeTabs: true }).catch((err) => {
     if (err.code !== 'failed-precondition' && err.code !== 'unimplemented') {
-      console.warn('Persistence error:', err);
+      console.warn('Persistence notice:', err);
     }
   });
 }
 
-/* ============================================================
-   2. ELEMENT REFS
-   ============================================================ */
 const $ = (id) => document.getElementById(id);
 
 const connBanner = $('connBanner');
@@ -787,9 +771,6 @@ const confirmCancelBtn = $('confirmCancelBtn');
 const confirmOkBtn = $('confirmOkBtn');
 const urlIconLabel = $('urlIconLabel');
 
-/* ============================================================
-   3. INSTANT LOCAL STORAGE CACHE & STATE
-   ============================================================ */
 const CACHE_APPS_KEY = 'upi_cached_apps_v1';
 const CACHE_VOTES_KEY = 'upi_cached_votes_v1';
 const CACHE_REPORTS_KEY = 'upi_cached_reports_v1';
@@ -832,23 +813,20 @@ function computeVoteState(rawVotes) {
   });
 }
 
-// Pre-compute cached vote data immediately on load
 computeVoteState(getLocalData(CACHE_VOTES_KEY, []));
 
-/* ============================================================
-   4. UTILITIES
-   ============================================================ */
 function escapeHtml(str) {
   return String(str ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 function truncate(str, n) { return str.length > n ? str.slice(0, n).trim() + '…' : str; }
 function formatBonus(type, min, max) {
-  if (type === 'fixed') return '₹' + Math.round(min).toLocaleString('en-IN');
-  if (type === 'range') return '₹' + Math.round(min).toLocaleString('en-IN') + '–₹' + Math.round(max).toLocaleString('en-IN');
+  if (type === 'fixed') return '₹' + Math.round(Number(min) || 0).toLocaleString('en-IN');
+  if (type === 'range') return '₹' + Math.round(Number(min) || 0).toLocaleString('en-IN') + '–₹' + Math.round(Number(max) || 0).toLocaleString('en-IN');
   return '—';
 }
-function bonusMaxValue(type, min, max) { if (type === 'none') return 0; return type === 'fixed' ? min : max; }
+function bonusMaxValue(type, min, max) { if (type === 'none') return 0; return type === 'fixed' ? (Number(min) || 0) : (Number(max) || 0); }
 function timeAgo(dateStr) {
+  if (!dateStr) return 'just now';
   const diffMs = Date.now() - new Date(dateStr).getTime();
   const sec = diffMs / 1000;
   if (sec < 60) return 'just now';
@@ -914,9 +892,6 @@ function appIconHtml(app, sizeClass = '') {
 }
 function uid() { return crypto.randomUUID ? crypto.randomUUID() : 'id' + Date.now() + Math.random().toString(36).slice(2); }
 
-/* ============================================================
-   5. LOCAL MATRIX STORAGE
-   ============================================================ */
 const FRIENDS_KEY = 'upi_referral_friends_v2';
 const MATRIX_KEY = 'upi_referral_matrix_v2';
 function loadFriends() { return getLocalData(FRIENDS_KEY, []); }
@@ -957,9 +932,6 @@ function getReferralCountForApp(appId) {
   return loadMatrix().filter(m => m.app_id === appId).length;
 }
 
-/* ============================================================
-   6. RENDERING
-   ============================================================ */
 function renderStats() {
   statTotalApps.textContent = appsCache.length;
   statVerified.textContent = appsCache.filter(a => a.verified_by_admin).length;
@@ -983,7 +955,7 @@ function renderCategoryOptions() {
 function getFilteredSortedApps() {
   let list = appsCache.slice();
   const q = searchInput.value.trim().toLowerCase();
-  if (q) list = list.filter(a => a.name.toLowerCase().includes(q));
+  if (q) list = list.filter(a => a.name && a.name.toLowerCase().includes(q));
   if (categoryFilter.value) list = list.filter(a => a.category === categoryFilter.value);
   if (verifiedOnlyCheckbox.checked) list = list.filter(a => a.verified_by_admin);
 
@@ -991,16 +963,16 @@ function getFilteredSortedApps() {
   list.sort((a, b) => {
     if (sort === 'top') {
       const pa = getVoteStats(a.id).pct, pb = getVoteStats(b.id).pct;
-      if (pa === null && pb === null) return new Date(b.created_at) - new Date(a.created_at);
+      if (pa === null && pb === null) return new Date(b.created_at || 0) - new Date(a.created_at || 0);
       if (pa === null) return 1;
       if (pb === null) return -1;
       if (pb !== pa) return pb - pa;
       return getVoteStats(b.id).total - getVoteStats(a.id).total;
     }
-    if (sort === 'newest') return new Date(b.created_at) - new Date(a.created_at);
+    if (sort === 'newest') return new Date(b.created_at || 0) - new Date(a.created_at || 0);
     if (sort === 'joining') return bonusMaxValue(b.joining_type, b.joining_min, b.joining_max) - bonusMaxValue(a.joining_type, a.joining_min, a.joining_max);
     if (sort === 'referral') return bonusMaxValue(b.referral_type, b.referral_min, b.referral_max) - bonusMaxValue(a.referral_type, a.referral_min, a.referral_max);
-    if (sort === 'az') return a.name.localeCompare(b.name);
+    if (sort === 'az') return (a.name || '').localeCompare(b.name || '');
     return 0;
   });
   return list;
@@ -1021,13 +993,13 @@ function renderAppRow(app, index, isTopSort) {
   const stats = getVoteStats(app.id);
   const pctColor = stats.pct === null ? null : stats.pct >= 70 ? 'var(--green)' : stats.pct >= 40 ? 'var(--gold)' : 'var(--stamp)';
   const myVote = myVotes[app.id];
-  const isNew = (Date.now() - new Date(app.created_at).getTime()) < 1000 * 60 * 60 * 24 * 3;
+  const isNew = (Date.now() - new Date(app.created_at || 0).getTime()) < 1000 * 60 * 60 * 24 * 3;
   const isTop = isTopSort && index === 0 && stats.total > 0;
   const trackedCount = getReferralCountForApp(app.id);
   const notesShort = app.notes ? truncate(app.notes, 140) : '';
 
   return `
-  <div class="ledger-row" data-app-id="${app.id}">
+  <div class="ledger-row" data-app-id="${escapeHtml(app.id)}">
     <div class="ledger-serial">${String(index + 1).padStart(3, '0')}</div>
     <div class="row-main">
       <div class="row-name-line">
@@ -1072,7 +1044,7 @@ function renderAppRow(app, index, isTopSort) {
 
 function renderMatrixPanel() {
   const friends = loadFriends();
-  const apps = appsCache.slice().sort((a, b) => a.name.localeCompare(b.name));
+  const apps = appsCache.slice().sort((a, b) => (a.name || '').localeCompare(b.name || ''));
   const matrix = loadMatrix();
 
   matrixNoAppsState.hidden = apps.length > 0;
@@ -1083,8 +1055,8 @@ function renderMatrixPanel() {
 
   const friendQ = friendSearch.value.trim().toLowerCase();
   const appQ = appSearchMatrix.value.trim().toLowerCase();
-  const visibleApps = appQ ? apps.filter(a => a.name.toLowerCase().includes(appQ)) : apps;
-  const visibleFriends = friendQ ? friends.filter(f => f.name.toLowerCase().includes(friendQ)) : friends;
+  const visibleApps = appQ ? apps.filter(a => a.name && a.name.toLowerCase().includes(appQ)) : apps;
+  const visibleFriends = friendQ ? friends.filter(f => f.name && f.name.toLowerCase().includes(friendQ)) : friends;
 
   if (!visibleApps.length || !visibleFriends.length) {
     matrixWrap.hidden = false; matrixSummary.hidden = true;
@@ -1098,7 +1070,7 @@ function renderMatrixPanel() {
 
   const thead = `<thead><tr>
     <th class="matrix-corner">Friend ↓ / App →</th>
-    ${visibleApps.map(a => `<th class="matrix-app-head" data-app-col="${a.id}" title="${escapeHtml(a.name)}">${appIconHtml(a)}<span class="app-head-name">${escapeHtml(a.name)}</span></th>`).join('')}
+    ${visibleApps.map(a => `<th class="matrix-app-head" data-app-col="${escapeHtml(a.id)}" title="${escapeHtml(a.name)}">${appIconHtml(a)}<span class="app-head-name">${escapeHtml(a.name)}</span></th>`).join('')}
     <th class="matrix-app-head matrix-total-head">Total</th>
   </tr></thead>`;
 
@@ -1114,8 +1086,8 @@ function renderMatrixPanel() {
         <div class="matrix-friend-name">
           <span>${escapeHtml(f.name)}</span>
           <div class="friend-actions-group">
-            <button class="friend-opt-btn edit" data-edit-friend="${f.id}" title="Rename ${escapeHtml(f.name)}" aria-label="Rename friend">✏️</button>
-            <button class="friend-opt-btn del" data-del-friend="${f.id}" title="Remove ${escapeHtml(f.name)}" aria-label="Remove friend">🗑</button>
+            <button class="friend-opt-btn edit" data-edit-friend="${escapeHtml(f.id)}" title="Rename ${escapeHtml(f.name)}" aria-label="Rename friend">✏️</button>
+            <button class="friend-opt-btn del" data-del-friend="${escapeHtml(f.id)}" title="Remove ${escapeHtml(f.name)}" aria-label="Remove friend">🗑</button>
           </div>
         </div>
       </td>
@@ -1159,7 +1131,7 @@ function renderCellButton(friend, app, cell) {
   const pending = cell && Number(cell.amount_pending) ? `<span class="cell-money pending">+₹${Number(cell.amount_pending).toLocaleString('en-IN')}</span>` : '';
   const titleBits = `${friend.name} × ${app.name}${meta ? ' — ' + meta.label : ' — not started'}`;
   return `<td class="${cls}">
-    <button type="button" class="matrix-cell-btn" data-friend="${friend.id}" data-app="${app.id}" title="${escapeHtml(titleBits)}">
+    <button type="button" class="matrix-cell-btn" data-friend="${escapeHtml(friend.id)}" data-app="${escapeHtml(app.id)}" title="${escapeHtml(titleBits)}">
       <span class="cell-emoji">${emoji}</span>
       ${received}${pending}
     </button>
@@ -1179,16 +1151,13 @@ function renderReportsList() {
         <div class="row-meta">${timeAgo(r.created_at)}</div>
       </div>
       <div class="row-links">
-        <button class="link-btn" data-report-action="dismiss" data-id="${r.id}">✔️ Dismiss</button>
-        ${app ? `<button class="link-btn danger" data-report-action="deleteapp" data-id="${app.id}">🗑 Delete app</button>` : ''}
+        <button class="link-btn" data-report-action="dismiss" data-id="${escapeHtml(r.id)}">✔️ Dismiss</button>
+        ${app ? `<button class="link-btn danger" data-report-action="deleteapp" data-id="${escapeHtml(app.id)}">🗑 Delete app</button>` : ''}
       </div>
     </div>`;
   }).join('');
 }
 
-/* ============================================================
-   7. FIRESTORE REALTIME LISTENERS & LOCAL SYNC
-   ============================================================ */
 function listenApps() {
   db.collection('apps').orderBy('created_at', 'desc').onSnapshot(snap => {
     appsCache = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -1220,9 +1189,6 @@ function listenReports() {
   }, err => console.error(err));
 }
 
-/* ============================================================
-   8. VOTING
-   ============================================================ */
 async function castVote(appId, voteType) {
   try {
     const docId = `${appId}_${deviceId}`;
@@ -1234,7 +1200,6 @@ async function castVote(appId, voteType) {
     };
     await db.collection('votes').doc(docId).set(voteData);
 
-    // Optimistically update local cache & UI
     const cachedVotes = getLocalData(CACHE_VOTES_KEY, []);
     const idx = cachedVotes.findIndex(v => v.app_id === appId && v.device_id === deviceId);
     if (idx > -1) cachedVotes[idx] = voteData;
@@ -1248,12 +1213,11 @@ async function castVote(appId, voteType) {
   } catch (err) { toast('Could not save vote: ' + err.message, 'error'); }
 }
 
-/* ============================================================
-   9. ADD / EDIT APP
-   ============================================================ */
 function wireBonusToggle(name, fixedRowId, rangeRowId) {
   document.querySelectorAll(`input[name="${name}"]`).forEach(r => r.addEventListener('change', () => {
-    const val = document.querySelector(`input[name="${name}"]:checked`).value;
+    const checked = document.querySelector(`input[name="${name}"]:checked`);
+    if (!checked) return;
+    const val = checked.value;
     $(fixedRowId).hidden = val !== 'fixed';
     $(rangeRowId).hidden = val !== 'range';
   }));
@@ -1268,11 +1232,11 @@ f_name.addEventListener('input', updateIconPreview);
 f_icon.addEventListener('input', updateIconPreview);
 
 f_file.addEventListener('change', (e) => {
-  const file = e.target.files[0];
+  const file = e.target.files && e.target.files[0];
   if (file) {
     const reader = new FileReader();
     reader.onload = (event) => {
-      iconPreview.innerHTML = `<span class="app-icon-wrap"><img class="app-icon lg" src="${event.target.result}" alt="Preview icon"></span>`;
+      iconPreview.innerHTML = `<span class="app-icon-wrap"><img class="app-icon lg" src="${escapeHtml(event.target.result)}" alt="Preview icon"></span>`;
     };
     reader.readAsDataURL(file);
   } else {
@@ -1293,17 +1257,19 @@ function openAddModal() {
 function openEditModal(app) {
   addAppForm.reset();
   editAppId.value = app.id;
-  f_name.value = app.name;
+  f_name.value = app.name || '';
   f_category.value = app.category || '';
   f_icon.value = app.icon_url || '';
 
-  document.querySelector(`input[name="joiningType"][value="${app.joining_type}"]`).checked = true;
-  f_joinFixed.value = app.joining_type === 'fixed' ? app.joining_min : '';
+  const joinRadio = document.querySelector(`input[name="joiningType"][value="${app.joining_type}"]`);
+  if (joinRadio) joinRadio.checked = true;
+  f_joinFixed.value = app.joining_type === 'fixed' ? (app.joining_min ?? '') : '';
   f_joinMin.value = app.joining_min ?? ''; f_joinMax.value = app.joining_max ?? '';
   joinFixedRow.hidden = app.joining_type !== 'fixed'; joinRangeRow.hidden = app.joining_type !== 'range';
 
-  document.querySelector(`input[name="referralType"][value="${app.referral_type}"]`).checked = true;
-  f_refFixed.value = app.referral_type === 'fixed' ? app.referral_min : '';
+  const refRadio = document.querySelector(`input[name="referralType"][value="${app.referral_type}"]`);
+  if (refRadio) refRadio.checked = true;
+  f_refFixed.value = app.referral_type === 'fixed' ? (app.referral_min ?? '') : '';
   f_refMin.value = app.referral_min ?? ''; f_refMax.value = app.referral_max ?? '';
   refFixedRow.hidden = app.referral_type !== 'fixed'; refRangeRow.hidden = app.referral_type !== 'range';
 
@@ -1320,8 +1286,8 @@ addAppForm.addEventListener('submit', async (e) => {
   const name = f_name.value.trim();
   if (!name) return;
 
-  const joiningType = document.querySelector('input[name="joiningType"]:checked').value;
-  const referralType = document.querySelector('input[name="referralType"]:checked').value;
+  const joiningType = (document.querySelector('input[name="joiningType"]:checked') || {}).value || 'none';
+  const referralType = (document.querySelector('input[name="referralType"]:checked') || {}).value || 'none';
   let joining_min = 0, joining_max = 0, referral_min = 0, referral_max = 0;
 
   if (joiningType === 'fixed') { joining_min = joining_max = Number(f_joinFixed.value) || 0; }
@@ -1339,9 +1305,9 @@ addAppForm.addEventListener('submit', async (e) => {
     addAppSubmitBtn.disabled = true;
     let finalIconUrl = f_icon.value.trim() || null;
 
-    if (isAdmin && f_file.files.length > 0) {
+    if (isAdmin && f_file.files && f_file.files.length > 0 && storage) {
       const file = f_file.files[0];
-      const fileExt = file.name.split('.').pop();
+      const fileExt = file.name.split('.').pop() || 'png';
       const fileName = `${Date.now()}_${Math.random().toString(36).slice(2, 7)}.${fileExt}`;
       const fileRef = storage.ref(`icons/${fileName}`);
 
@@ -1373,9 +1339,6 @@ addAppForm.addEventListener('submit', async (e) => {
   finally { addAppSubmitBtn.disabled = false; }
 });
 
-/* ============================================================
-   10. REPORTING
-   ============================================================ */
 function openReportModal(app) {
   reportAppId.value = app.id;
   reportAppName.textContent = `Reporting: ${app.name}`;
@@ -1395,9 +1358,6 @@ reportForm.addEventListener('submit', async (e) => {
   } catch (err) { toast('Could not submit report: ' + err.message, 'error'); }
 });
 
-/* ============================================================
-   11. ADMIN AUTH & CONTROLS (With User Creation Fallback)
-   ============================================================ */
 function setAdminState(loggedIn) {
   isAdmin = loggedIn;
   adminBar.hidden = !loggedIn;
@@ -1425,13 +1385,11 @@ adminLoginForm.addEventListener('submit', async (e) => {
   adminSubmitBtn.disabled = true;
 
   try {
-    // 1. Try Signing In
     await auth.signInWithEmailAndPassword(email, password);
     toast('Signed in as admin', 'success');
     closeModal('adminLoginModalBackdrop');
     adminLoginForm.reset();
   } catch (err) {
-    // 2. If user doesn't exist, create it automatically
     if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
       try {
         await auth.createUserWithEmailAndPassword(email, password);
@@ -1482,9 +1440,6 @@ reportsList.addEventListener('click', async (e) => {
   }
 });
 
-/* ============================================================
-   12. MATRIX & UI DELEGATION
-   ============================================================ */
 function trackReferral(app) {
   showPanel('ledger');
   setTimeout(() => {
@@ -1513,6 +1468,7 @@ function copyInvite(app) {
 appsList.addEventListener('click', (e) => {
   const btn = e.target.closest('[data-action]'); if (!btn) return;
   const row = btn.closest('.ledger-row');
+  if (!row) return;
   const appId = row.dataset.appId;
   const app = appsCache.find(a => a.id === appId);
   if (!app) return;
@@ -1526,12 +1482,12 @@ appsList.addEventListener('click', (e) => {
     case 'delete': deleteApp(app); break;
     case 'more': {
       const notesEl = row.querySelector('.row-notes');
-      notesEl.innerHTML = escapeHtml(app.notes) + ' <button class="more-btn" data-action="less">Show less</button>';
+      if (notesEl) notesEl.innerHTML = escapeHtml(app.notes) + ' <button class="more-btn" data-action="less">Show less</button>';
       break;
     }
     case 'less': {
       const notesEl = row.querySelector('.row-notes');
-      notesEl.innerHTML = escapeHtml(truncate(app.notes, 140)) + ' <button class="more-btn" data-action="more">Read more</button>';
+      if (notesEl) notesEl.innerHTML = escapeHtml(truncate(app.notes, 140)) + ' <button class="more-btn" data-action="more">Read more</button>';
       break;
     }
   }
@@ -1640,9 +1596,10 @@ function showPanel(name) {
   reportsPanel.hidden = name !== 'reports';
   tabApps.classList.toggle('active', name === 'apps');
   tabLedger.classList.toggle('active', name === 'ledger');
-  tabApps.setAttribute('aria-selected', name === 'apps');
-  tabLedger.setAttribute('aria-selected', name === 'ledger');
+  tabApps.setAttribute('aria-selected', String(name === 'apps'));
+  tabLedger.setAttribute('aria-selected', String(name === 'ledger'));
   if (name === 'ledger') renderMatrixPanel();
+  if (name === 'apps') renderApps();
 }
 tabApps.addEventListener('click', () => showPanel('apps'));
 tabLedger.addEventListener('click', () => showPanel('ledger'));
@@ -1668,9 +1625,6 @@ themeToggle.addEventListener('click', () => {
   themeToggle.textContent = next === 'dark' ? '☀️' : '🌙';
 });
 
-/* ============================================================
-   13. INITIALIZATION
-   ============================================================ */
 function init() {
   if (!isConfigured) {
     connBanner.hidden = false;
@@ -1681,14 +1635,12 @@ function init() {
     return;
   }
 
-  // 1. Render immediately from local storage cache (zero loading latency)
   if (appsCache.length > 0) {
     renderCategoryOptions();
     renderApps();
     renderStats();
   }
 
-  // 2. Attach Auth & Realtime Firebase Listeners
   auth.onAuthStateChanged(user => setAdminState(!!user));
   listenApps();
   listenVotes();
