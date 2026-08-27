@@ -56,6 +56,10 @@
     background:var(--stamp-soft); color:var(--stamp); border-bottom:1px solid var(--stamp);
     text-align:center; padding:10px 16px; font-size:14px; font-family:var(--font-body);
   }
+  .migration-banner{
+    background:var(--gold-soft); color:var(--gold); border-bottom:1px dashed var(--gold);
+    display:flex; align-items:center; justify-content:center; gap:12px; padding:10px 16px; font-size:13.5px;
+  }
 
   /* ===== HEADER ===== */
   .site-header{ background:var(--ink); color:var(--paper); position:sticky; top:0; z-index:30; box-shadow:var(--shadow);}
@@ -165,7 +169,6 @@
   }
   .app-icon.lg{ width:44px; height:44px; border-radius:11px; font-size:16px; }
   .app-icon.sm{ width:22px; height:22px; border-radius:6px; font-size:10px; }
-  .app-icon.xs{ width:18px; height:18px; border-radius:5px; font-size:9px; }
   .icon-preview-row{ display:flex; align-items:center; gap:10px; margin-top:-4px; }
   .icon-preview-row span.hint{ font-size:12px; color:var(--ink-soft); font-weight:400; }
   .file-input-wrapper { display:flex; flex-direction:column; gap:6px; }
@@ -320,7 +323,12 @@
 <body data-theme="light">
 
 <div id="connBanner" class="conn-banner" hidden>
-  ⚠️ <strong>Not connected yet.</strong> Open <code>index.html</code>, find <code>SUPABASE_URL</code> and <code>SUPABASE_ANON_KEY</code> near the top of the script, and paste in your Supabase project values.
+  ⚠️ <strong>Not connected yet.</strong> Replace the <code>firebaseConfig</code> values inside <code>index.html</code> with your Firebase project credentials.
+</div>
+
+<div id="migrationBanner" class="migration-banner" hidden>
+  📦 <strong>Firestore is empty.</strong> Ready to import your 6 apps &amp; 12 votes from Supabase?
+  <button id="runMigrationBtn" class="primary-btn" style="padding:4px 12px; font-size:12px;">Import Data Now</button>
 </div>
 
 <header class="site-header">
@@ -644,17 +652,35 @@
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<!-- Firebase Compat CDNs -->
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
+
 <script>
 /* ============================================================
-   1. CONFIG
+   1. FIREBASE CONFIGURATION
    ============================================================ */
-const SUPABASE_URL = 'https://bkjgxhbiomeuasexpxru.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJramd4aGJpb21ldWFzZXhweHJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5NzMyMTQsImV4cCI6MjA5NzU0OTIxNH0.zqcFeuL5FtFLwCtz4p2dESHt9-1uCzIY1hbQGeYgYS8';
+const firebaseConfig = {
+  apiKey: "AIzaSyBK5qMGiDmNmZvXaoZL-4ADiScP7Mkhfns",
+  authDomain: "freemoney-cb6b4.firebaseapp.com",
+  projectId: "freemoney-cb6b4",
+  storageBucket: "freemoney-cb6b4.firebasestorage.app",
+  messagingSenderId: "451635864405",
+  appId: "1:451635864405:web:a13f55f72fd895988e45dc",
+  measurementId: "G-VLJ1823X5D"
+};
 
-const isConfigured = !SUPABASE_URL.includes('YOUR_') && !SUPABASE_ANON_KEY.includes('YOUR_');
-const { createClient } = supabase;
-const sb = isConfigured ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+const isConfigured = !firebaseConfig.apiKey.includes('YOUR_');
+let auth, db, storage;
+
+if (isConfigured) {
+  firebase.initializeApp(firebaseConfig);
+  auth = firebase.auth();
+  db = firebase.firestore();
+  storage = firebase.storage();
+}
 
 /* ============================================================
    2. ELEMENT REFS
@@ -662,6 +688,9 @@ const sb = isConfigured ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 const $ = (id) => document.getElementById(id);
 
 const connBanner = $('connBanner');
+const migrationBanner = $('migrationBanner');
+const runMigrationBtn = $('runMigrationBtn');
+
 const themeToggle = $('themeToggle');
 const adminLoginBtn = $('adminLoginBtn');
 const adminBar = $('adminBar');
@@ -692,7 +721,6 @@ const appsList = $('appsList');
 
 const reportsEmptyState = $('reportsEmptyState');
 const reportsList = $('reportsList');
-
 const toastContainer = $('toastContainer');
 
 const friendSearch = $('friendSearch');
@@ -761,9 +789,10 @@ const confirmModalBackdrop = $('confirmModalBackdrop');
 const confirmMessage = $('confirmMessage');
 const confirmCancelBtn = $('confirmCancelBtn');
 const confirmOkBtn = $('confirmOkBtn');
+const urlIconLabel = $('urlIconLabel');
 
 /* ============================================================
-   3. STATE
+   3. STATE & UTILITIES
    ============================================================ */
 let appsCache = [];
 let votesAgg = {};   
@@ -778,9 +807,6 @@ if (!deviceId) {
   localStorage.setItem(DEVICE_KEY, deviceId);
 }
 
-/* ============================================================
-   4. UTILITIES
-   ============================================================ */
 function escapeHtml(str) {
   return String(str ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
@@ -828,9 +854,9 @@ function getVoteStats(appId) {
 
 const STATUS_META = {
   in_progress:       { label: 'In progress',       emoji: '⏳' },
-  referred:           { label: 'Already referred',  emoji: '✅' },
-  already_user:       { label: 'Already a user',    emoji: '👤' },
-  referred_by_them:   { label: 'Referred by them',  emoji: '🔁' }
+  referred:          { label: 'Already referred',  emoji: '✅' },
+  already_user:      { label: 'Already a user',    emoji: '👤' },
+  referred_by_them:  { label: 'Referred by them',  emoji: '🔁' }
 };
 
 const AVATAR_COLORS = ['#1F7A4D', '#C8932E', '#B4472D', '#33588F', '#7A4DB4', '#1F7A9C', '#9C5D1F', '#2E7D6B'];
@@ -858,12 +884,10 @@ function appIconHtml(app, sizeClass = '') {
 function uid() { return crypto.randomUUID ? crypto.randomUUID() : 'id' + Date.now() + Math.random().toString(36).slice(2); }
 
 /* ============================================================
-   5. REFERRAL MATRIX DATA LAYER
+   4. LOCAL MATRIX STORAGE
    ============================================================ */
 const FRIENDS_KEY = 'upi_referral_friends_v2';
 const MATRIX_KEY = 'upi_referral_matrix_v2';
-const OLD_CONTACTS_KEY = 'upi_referral_contacts_v1';
-
 function loadFriends() { try { return JSON.parse(localStorage.getItem(FRIENDS_KEY)) || []; } catch { return []; } }
 function saveFriends(list) { localStorage.setItem(FRIENDS_KEY, JSON.stringify(list)); }
 function loadMatrix() { try { return JSON.parse(localStorage.getItem(MATRIX_KEY)) || []; } catch { return []; } }
@@ -879,10 +903,7 @@ function addFriend(name) {
 function renameFriend(friendId, newName) {
   const list = loadFriends();
   const friend = list.find(f => f.id === friendId);
-  if (friend) {
-    friend.name = newName;
-    saveFriends(list);
-  }
+  if (friend) { friend.name = newName; saveFriends(list); }
 }
 function deleteFriend(friendId) {
   saveFriends(loadFriends().filter(f => f.id !== friendId));
@@ -905,37 +926,8 @@ function getReferralCountForApp(appId) {
   return loadMatrix().filter(m => m.app_id === appId).length;
 }
 
-function migrateOldContactsIfNeeded() {
-  if (localStorage.getItem(FRIENDS_KEY)) return;
-  let old = [];
-  try { old = JSON.parse(localStorage.getItem(OLD_CONTACTS_KEY)) || []; } catch { old = []; }
-  if (!old.length) { saveFriends([]); saveMatrix([]); return; }
-  const friends = [];
-  const matrix = [];
-  const nameToId = {};
-  old.forEach(c => {
-    const key = (c.name || '').trim().toLowerCase();
-    if (!key) return;
-    let fid = nameToId[key];
-    if (!fid) {
-      fid = uid();
-      nameToId[key] = fid;
-      friends.push({ id: fid, name: c.name.trim(), created_at: c.created_at || new Date().toISOString() });
-    }
-    if (c.app_id && c.status && c.status !== 'to_refer') {
-      matrix.push({
-        id: uid(), friend_id: fid, app_id: c.app_id, status: c.status,
-        amount_received: 0, amount_pending: 0, note: c.note || '',
-        updated_at: c.created_at || new Date().toISOString()
-      });
-    }
-  });
-  saveFriends(friends);
-  saveMatrix(matrix);
-}
-
 /* ============================================================
-   6. RENDERING
+   5. RENDERING
    ============================================================ */
 function renderStats() {
   statTotalApps.textContent = appsCache.length;
@@ -986,11 +978,8 @@ function getFilteredSortedApps() {
 function renderApps() {
   if (!isConfigured) return;
   const list = getFilteredSortedApps();
-  
-  // Clean block fix: Always turn off raw layout loader
   loadingState.hidden = true;
   loadingState.style.display = 'none';
-  
   if (!list.length) { appsList.hidden = true; emptyState.hidden = false; return; }
   emptyState.hidden = true; appsList.hidden = false;
   const isTopSort = sortSelect.value === 'top';
@@ -1051,7 +1040,6 @@ function renderAppRow(app, index, isTopSort) {
 }
 
 function renderMatrixPanel() {
-  migrateOldContactsIfNeeded();
   const friends = loadFriends();
   const apps = appsCache.slice().sort((a, b) => a.name.localeCompare(b.name));
   const matrix = loadMatrix();
@@ -1168,59 +1156,205 @@ function renderReportsList() {
 }
 
 /* ============================================================
-   7. DATA FETCHING
+   6. FIRESTORE REALTIME LISTENERS
    ============================================================ */
-async function fetchApps() {
-  const { data, error } = await sb.from('apps').select('*').order('created_at', { ascending: false });
-  if (error) { toast('Failed to load apps: ' + error.message, 'error'); return; }
-  appsCache = data || [];
-  renderCategoryOptions();
+function listenApps() {
+  db.collection('apps').orderBy('created_at', 'desc').onSnapshot(snap => {
+    appsCache = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    if (appsCache.length === 0) {
+      migrationBanner.hidden = false;
+    } else {
+      migrationBanner.hidden = true;
+    }
+    renderCategoryOptions();
+    renderApps();
+    renderStats();
+    if (isAdmin) renderReportsList();
+  }, err => toast('Error fetching apps: ' + err.message, 'error'));
 }
-async function fetchVotes() {
-  const { data, error } = await sb.from('votes').select('app_id, device_id, vote_type');
-  if (error) { toast('Failed to load votes: ' + error.message, 'error'); return; }
-  votesAgg = {}; myVotes = {};
-  (data || []).forEach(v => {
-    if (!votesAgg[v.app_id]) votesAgg[v.app_id] = { working: 0, not_working: 0 };
-    votesAgg[v.app_id][v.vote_type]++;
-    if (v.device_id === deviceId) myVotes[v.app_id] = v.vote_type;
-  });
+
+function listenVotes() {
+  db.collection('votes').onSnapshot(snap => {
+    votesAgg = {}; myVotes = {};
+    snap.docs.forEach(doc => {
+      const v = doc.data();
+      if (!votesAgg[v.app_id]) votesAgg[v.app_id] = { working: 0, not_working: 0 };
+      if (votesAgg[v.app_id][v.vote_type] !== undefined) votesAgg[v.app_id][v.vote_type]++;
+      if (v.device_id === deviceId) myVotes[v.app_id] = v.vote_type;
+    });
+    renderApps();
+    renderStats();
+  }, err => toast('Error fetching votes: ' + err.message, 'error'));
 }
-async function refreshReports() {
-  try {
-    const { data, error } = await sb.from('reports').select('*').order('created_at', { ascending: false });
-    if (error) throw error;
-    reportsCache = data || [];
+
+function listenReports() {
+  db.collection('reports').orderBy('created_at', 'desc').onSnapshot(snap => {
+    reportsCache = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     reportsBadge.hidden = reportsCache.length === 0;
     reportsBadge.textContent = reportsCache.length;
     renderReportsList();
-  } catch (err) { console.error(err); }
+  }, err => console.error(err));
 }
-async function loadAll() {
-  loadingState.hidden = false; 
-  loadingState.style.display = 'flex';
-  appsList.hidden = true; emptyState.hidden = true;
-  await Promise.all([fetchApps(), fetchVotes()]);
-  
-  // Kill layout loaders explicitly on retrieval complete
-  loadingState.hidden = true;
-  loadingState.style.display = 'none';
-  renderApps(); renderStats();
+
+/* ============================================================
+   7. DATA MIGRATION HELPER
+   ============================================================ */
+const SUPABASE_APPS = [
+  {
+    "id": "05a3e37d-14e2-436e-916f-2c95aa4c6b4e",
+    "name": "Navi",
+    "category": null,
+    "joining_type": "none",
+    "joining_min": 0,
+    "joining_max": 0,
+    "referral_type": "fixed",
+    "referral_min": 100,
+    "referral_max": 100,
+    "notes": "Day 1 Rs 60.\nDay 3 Rs 20.\nDay 5 Rs 20",
+    "added_by": "Anonymous",
+    "verified_by_admin": true,
+    "created_at": "2026-06-22 04:57:41.130138+00",
+    "icon_url": "https://bkjgxhbiomeuasexpxru.supabase.co/storage/v1/object/public/app-icons/icons/1782104258903_ucymz.png"
+  },
+  {
+    "id": "4efcae9f-2871-4716-b3d5-deb90c813a7a",
+    "name": "Gpay",
+    "category": null,
+    "joining_type": "fixed",
+    "joining_min": 21,
+    "joining_max": 21,
+    "referral_type": "fixed",
+    "referral_min": 151,
+    "referral_max": 151,
+    "notes": "Rs 51 on first payment \nRs 25 for first 4 weeks",
+    "added_by": "Anonymous",
+    "verified_by_admin": true,
+    "created_at": "2026-06-22 05:31:19.20485+00",
+    "icon_url": "https://bkjgxhbiomeuasexpxru.supabase.co/storage/v1/object/public/app-icons/icons/1782106314455_rxxp8.webp"
+  },
+  {
+    "id": "78164a77-96c0-4e0c-a16e-1fbf1d133ad0",
+    "name": "BHIM",
+    "category": null,
+    "joining_type": "none",
+    "joining_min": 0,
+    "joining_max": 0,
+    "referral_type": "range",
+    "referral_min": 0,
+    "referral_max": 200,
+    "notes": null,
+    "added_by": "Anonymous",
+    "verified_by_admin": true,
+    "created_at": "2026-06-22 05:33:04.884459+00",
+    "icon_url": "https://bkjgxhbiomeuasexpxru.supabase.co/storage/v1/object/public/app-icons/icons/1782106383352_2aufm.png"
+  },
+  {
+    "id": "83974661-9ccc-4575-b541-7a43609c8444",
+    "name": "MobiKwik",
+    "category": null,
+    "joining_type": "fixed",
+    "joining_min": 25,
+    "joining_max": 25,
+    "referral_type": "range",
+    "referral_min": 50,
+    "referral_max": 100,
+    "notes": null,
+    "added_by": "Anonymous",
+    "verified_by_admin": true,
+    "created_at": "2026-06-22 05:34:04.819777+00",
+    "icon_url": "https://bkjgxhbiomeuasexpxru.supabase.co/storage/v1/object/public/app-icons/icons/1782106443425_t8k4d.png"
+  },
+  {
+    "id": "91d253b7-54fe-4f5d-a0b9-af13e2bb292f",
+    "name": "Phone pay",
+    "category": null,
+    "joining_type": "none",
+    "joining_min": 0,
+    "joining_max": 0,
+    "referral_type": "fixed",
+    "referral_min": 200,
+    "referral_max": 200,
+    "notes": null,
+    "added_by": "Anonymous",
+    "verified_by_admin": true,
+    "created_at": "2026-06-22 05:34:49.030999+00",
+    "icon_url": "https://bkjgxhbiomeuasexpxru.supabase.co/storage/v1/object/public/app-icons/icons/1782106487532_3j5f9.png"
+  },
+  {
+    "id": "a19d5c4a-0dfb-4655-841b-fad5ce48bbb1",
+    "name": "Paytm",
+    "category": null,
+    "joining_type": "none",
+    "joining_min": 0,
+    "joining_max": 0,
+    "referral_type": "range",
+    "referral_min": 0,
+    "referral_max": 200,
+    "notes": null,
+    "added_by": "Anonymous",
+    "verified_by_admin": true,
+    "created_at": "2026-06-20 19:44:03.221539+00",
+    "icon_url": null
+  }
+];
+
+const SUPABASE_VOTES = [
+  { "id": "06e9ad79-09f3-40a4-94c2-0cbdd72fa7c6", "app_id": "a19d5c4a-0dfb-4655-841b-fad5ce48bbb1", "device_id": "2c746e3e-5e1a-4f9e-815d-54b422d1de01", "vote_type": "working", "created_at": "2026-06-20 19:44:33.626766+00" },
+  { "id": "7d7edc0b-a122-423c-9ef3-6bd6fe80e040", "app_id": "05a3e37d-14e2-436e-916f-2c95aa4c6b4e", "device_id": "0a596b64-305f-419d-9c75-fc530c5ed5ad", "vote_type": "working", "created_at": "2026-06-24 16:07:32.632692+00" },
+  { "id": "7dc1d6ec-f060-455f-844c-61b8a952368f", "app_id": "a19d5c4a-0dfb-4655-841b-fad5ce48bbb1", "device_id": "b894eaff-1492-421b-8224-3f34f434a963", "vote_type": "working", "created_at": "2026-06-20 19:46:13.305826+00" },
+  { "id": "0dae18c6-23fe-4b13-a417-64491c28c89b", "app_id": "05a3e37d-14e2-436e-916f-2c95aa4c6b4e", "device_id": "73ff32cf-4b71-420b-ae9b-ab00e28ebec0", "vote_type": "working", "created_at": "2026-06-22 07:05:44.871183+00" },
+  { "id": "673f32e6-c14d-4bc9-93e1-381fe21b66df", "app_id": "05a3e37d-14e2-436e-916f-2c95aa4c6b4e", "device_id": "677d2fa9-e5fe-4f81-9b16-43b44b9347fb", "vote_type": "working", "created_at": "2026-06-24 16:03:00.672909+00" },
+  { "id": "5fa23fa9-bb33-4df4-8d96-bbf21221b65e", "app_id": "05a3e37d-14e2-436e-916f-2c95aa4c6b4e", "device_id": "da44fe1a-d069-450f-ad7c-7d94cfbf3b01", "vote_type": "working", "created_at": "2026-06-23 13:02:40.852158+00" },
+  { "id": "92fefdf2-3863-4416-8321-df3daae5feeb", "app_id": "05a3e37d-14e2-436e-916f-2c95aa4c6b4e", "device_id": "8bb38bb4-0985-452f-a65c-3a32f62daef8", "vote_type": "working", "created_at": "2026-06-23 13:01:21.057531+00" },
+  { "id": "b47dbff9-6d5a-4712-8874-98403d1544a8", "app_id": "a19d5c4a-0dfb-4655-841b-fad5ce48bbb1", "device_id": "da44fe1a-d069-450f-ad7c-7d94cfbf3b01", "vote_type": "working", "created_at": "2026-06-23 13:02:47.375685+00" },
+  { "id": "31f47d8b-efb2-4d2d-8ae5-df3c51ffebfa", "app_id": "05a3e37d-14e2-436e-916f-2c95aa4c6b4e", "device_id": "766ef968-3be3-485a-8b89-216a3cbbaaf9", "vote_type": "working", "created_at": "2026-06-24 16:03:09.110291+00" },
+  { "id": "4da47900-53b4-4b53-b26e-44d715df2dfb", "app_id": "05a3e37d-14e2-436e-916f-2c95aa4c6b4e", "device_id": "887fa54c-83b3-4fe7-8738-4ea788ebddff", "vote_type": "working", "created_at": "2026-06-24 16:02:40.404286+00" },
+  { "id": "820d880c-03d1-4cb5-aa38-769fb4fb7465", "app_id": "05a3e37d-14e2-436e-916f-2c95aa4c6b4e", "device_id": "e25fdb58-29cb-4340-9fe4-16a7e0f22ee8", "vote_type": "working", "created_at": "2026-06-24 16:02:49.034785+00" },
+  { "id": "2daefbb7-6e9c-4914-bc48-6a3f0190cfda", "app_id": "05a3e37d-14e2-436e-916f-2c95aa4c6b4e", "device_id": "e5ea0553-9076-47b2-bdcf-8ea9c8112fb9", "vote_type": "working", "created_at": "2026-06-23 13:00:46.402687+00" }
+];
+
+async function runDataMigration() {
+  runMigrationBtn.disabled = true;
+  runMigrationBtn.textContent = 'Importing...';
+  try {
+    const batch = db.batch();
+
+    SUPABASE_APPS.forEach(app => {
+      const { id, ...data } = app;
+      const ref = db.collection('apps').doc(id);
+      batch.set(ref, data);
+    });
+
+    SUPABASE_VOTES.forEach(vote => {
+      const docId = `${vote.app_id}_${vote.device_id}`;
+      const ref = db.collection('votes').doc(docId);
+      batch.set(ref, vote);
+    });
+
+    await batch.commit();
+    toast('Migration complete! Data imported to Firebase.', 'success');
+    migrationBanner.hidden = true;
+  } catch (err) {
+    toast('Migration failed: ' + err.message, 'error');
+  } finally {
+    runMigrationBtn.disabled = false;
+    runMigrationBtn.textContent = 'Import Data Now';
+  }
 }
+runMigrationBtn.addEventListener('click', runDataMigration);
 
 /* ============================================================
    8. VOTING
    ============================================================ */
 async function castVote(appId, voteType) {
   try {
-    const { error } = await sb.from('votes').upsert(
-      { app_id: appId, device_id: deviceId, vote_type: voteType },
-      { onConflict: 'app_id,device_id' }
-    );
-    if (error) throw error;
-    myVotes[appId] = voteType;
-    await fetchVotes();
-    renderApps(); renderStats();
+    const docId = `${appId}_${deviceId}`;
+    await db.collection('votes').doc(docId).set({
+      app_id: appId,
+      device_id: deviceId,
+      vote_type: voteType,
+      updated_at: new Date().toISOString()
+    });
     toast('Thanks for voting!', 'success');
   } catch (err) { toast('Could not save vote: ' + err.message, 'error'); }
 }
@@ -1320,17 +1454,11 @@ addAppForm.addEventListener('submit', async (e) => {
       const file = f_file.files[0];
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}_${Math.random().toString(36).slice(2, 7)}.${fileExt}`;
-      const filePath = `icons/${fileName}`;
+      const fileRef = storage.ref(`icons/${fileName}`);
 
       toast('Uploading icon image assets...', 'info');
-      const { data: uploadData, error: uploadError } = await sb.storage
-        .from('app-icons')
-        .upload(filePath, file, { cacheControl: '3600', upsert: true });
-
-      if (uploadError) throw new Error('Asset upload failed: ' + uploadError.message);
-
-      const { data: urlData } = sb.storage.from('app-icons').getPublicUrl(filePath);
-      finalIconUrl = urlData.publicUrl;
+      await fileRef.put(file);
+      finalIconUrl = await fileRef.getDownloadURL();
     }
 
     const payload = {
@@ -1343,16 +1471,15 @@ addAppForm.addEventListener('submit', async (e) => {
     };
 
     if (editAppId.value) {
-      const { error } = await sb.from('apps').update(payload).eq('id', editAppId.value);
-      if (error) throw error;
+      await db.collection('apps').doc(editAppId.value).update(payload);
       toast('App updated', 'success');
     } else {
-      const { error } = await sb.from('apps').insert(payload);
-      if (error) throw error;
+      payload.created_at = new Date().toISOString();
+      payload.verified_by_admin = false;
+      await db.collection('apps').add(payload);
       toast('App added — thank you!', 'success');
     }
     closeModal('addAppModalBackdrop');
-    await fetchApps(); renderApps(); renderStats();
   } catch (err) { toast('Save failed: ' + err.message, 'error'); }
   finally { addAppSubmitBtn.disabled = false; }
 });
@@ -1369,16 +1496,18 @@ function openReportModal(app) {
 reportForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   try {
-    const { error } = await sb.from('reports').insert({ app_id: reportAppId.value, reason: reportReason.value.trim() });
-    if (error) throw error;
+    await db.collection('reports').add({
+      app_id: reportAppId.value,
+      reason: reportReason.value.trim(),
+      created_at: new Date().toISOString()
+    });
     toast('Report submitted — thanks for flagging this', 'success');
     closeModal('reportModalBackdrop');
-    if (isAdmin) await refreshReports();
   } catch (err) { toast('Could not submit report: ' + err.message, 'error'); }
 });
 
 /* ============================================================
-   11. ADMIN AUTH
+   11. ADMIN AUTH & CONTROLS
    ============================================================ */
 function setAdminState(loggedIn) {
   isAdmin = loggedIn;
@@ -1387,7 +1516,7 @@ function setAdminState(loggedIn) {
   adminIconUploadSection.hidden = !loggedIn;
   
   if (loggedIn) { 
-    refreshReports(); 
+    listenReports();
     urlIconLabel.querySelector('span')?.remove();
     urlIconLabel.insertAdjacentHTML('afterbegin', '<span style="font-weight:normal; font-size:12px; color:var(--ink-faint);">Or paste external URL alternative:</span>');
   } else { 
@@ -1402,38 +1531,30 @@ adminLoginBtn.addEventListener('click', () => openModal('adminLoginModalBackdrop
 adminLoginForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   try {
-    const { data, error } = await sb.auth.signInWithPassword({ email: adminEmail.value.trim(), password: adminPassword.value });
-    if (error) throw error;
+    await auth.signInWithEmailAndPassword(adminEmail.value.trim(), adminPassword.value);
     toast('Signed in as admin', 'success');
     closeModal('adminLoginModalBackdrop');
     adminLoginForm.reset();
   } catch (err) { toast('Sign-in failed: ' + err.message, 'error'); }
 });
 adminLogoutBtn.addEventListener('click', async () => {
-  await sb.auth.signOut();
+  await auth.signOut();
   toast('Signed out', 'success');
 });
 
-/* ============================================================
-   12. ADMIN ACTIONS
-   ============================================================ */
 async function toggleVerify(app) {
   try {
-    const { error } = await sb.from('apps').update({ verified_by_admin: !app.verified_by_admin }).eq('id', app.id);
-    if (error) throw error;
+    await db.collection('apps').doc(app.id).update({ verified_by_admin: !app.verified_by_admin });
     toast(app.verified_by_admin ? 'App unverified' : 'App verified ✅', 'success');
-    await fetchApps(); renderApps(); renderStats();
   } catch (err) { toast('Action failed: ' + err.message, 'error'); }
 }
+
 async function deleteApp(app) {
-  const ok = await confirmAction(`Delete "${app.name}"? This also removes its votes and reports. This cannot be undone.`);
+  const ok = await confirmAction(`Delete "${app.name}"? This cannot be undone.`);
   if (!ok) return;
   try {
-    const { error } = await sb.from('apps').delete().eq('id', app.id);
-    if (error) throw error;
+    await db.collection('apps').doc(app.id).delete();
     toast('App deleted', 'success');
-    await fetchApps(); await fetchVotes(); renderApps(); renderStats();
-    if (isAdmin) refreshReports();
   } catch (err) { toast('Delete failed: ' + err.message, 'error'); }
 }
 
@@ -1441,17 +1562,16 @@ reportsList.addEventListener('click', async (e) => {
   const btn = e.target.closest('[data-report-action]'); if (!btn) return;
   const id = btn.dataset.id;
   if (btn.dataset.reportAction === 'dismiss') {
-    try { const { error } = await sb.from('reports').delete().eq('id', id); if (error) throw error; toast('Report dismissed', 'success'); refreshReports(); }
+    try { await db.collection('reports').doc(id).delete(); toast('Report dismissed', 'success'); }
     catch (err) { toast(err.message, 'error'); }
   } else if (btn.dataset.reportAction === 'deleteapp') {
     const app = appsCache.find(a => a.id === id);
     if (app) await deleteApp(app);
-    refreshReports();
   }
 });
 
 /* ============================================================
-   13. REFERRAL TRACKER LINK + INVITE COPY
+   12. MATRIX & UI DELEGATION
    ============================================================ */
 function trackReferral(app) {
   showPanel('ledger');
@@ -1478,9 +1598,6 @@ function copyInvite(app) {
     .catch(() => toast('Could not copy — clipboard blocked', 'error'));
 }
 
-/* ============================================================
-   14. EVENT DELEGATION — apps list
-   ============================================================ */
 appsList.addEventListener('click', (e) => {
   const btn = e.target.closest('[data-action]'); if (!btn) return;
   const row = btn.closest('.ledger-row');
@@ -1508,9 +1625,6 @@ appsList.addEventListener('click', (e) => {
   }
 });
 
-/* ============================================================
-   15. REFERRAL MATRIX — events
-   ============================================================ */
 function openCellModal(friend, app, cell) {
   cellFriendId.value = friend.id;
   cellAppId.value = app.id;
@@ -1531,7 +1645,6 @@ matrixTable.addEventListener('click', (e) => {
     openCellModal(friend, app, getCell(friend.id, app.id));
     return;
   }
-  
   const editBtn = e.target.closest('[data-edit-friend]');
   if (editBtn) {
     const fid = editBtn.dataset.editFriend;
@@ -1546,7 +1659,6 @@ matrixTable.addEventListener('click', (e) => {
     setTimeout(() => addFriendNameInput.focus(), 60);
     return;
   }
-
   const delBtn = e.target.closest('[data-del-friend]');
   if (delBtn) {
     const fid = delBtn.dataset.delFriend;
@@ -1592,7 +1704,6 @@ addFriendForm.addEventListener('submit', (e) => {
   e.preventDefault();
   const name = addFriendNameInput.value.trim();
   if (!name) return;
-  
   if (editFriendId.value) {
     renameFriend(editFriendId.value, name);
     toast('Friend name updated', 'success');
@@ -1611,9 +1722,6 @@ addFriendForm.addEventListener('submit', (e) => {
 friendSearch.addEventListener('input', debounce(renderMatrixPanel, 150));
 appSearchMatrix.addEventListener('input', debounce(renderMatrixPanel, 150));
 
-/* ============================================================
-   16. TABS / PANELS
-   ============================================================ */
 function showPanel(name) {
   appsPanel.hidden = name !== 'apps';
   ledgerPanel.hidden = name !== 'ledger';
@@ -1628,9 +1736,6 @@ tabApps.addEventListener('click', () => showPanel('apps'));
 tabLedger.addEventListener('click', () => showPanel('ledger'));
 viewReportsBtn.addEventListener('click', () => showPanel('reports'));
 
-/* ============================================================
-   17. CONTROLS WIRING
-   ============================================================ */
 searchInput.addEventListener('input', debounce(renderApps, 200));
 categoryFilter.addEventListener('change', renderApps);
 sortSelect.addEventListener('change', renderApps);
@@ -1638,16 +1743,10 @@ verifiedOnlyCheckbox.addEventListener('change', renderApps);
 addAppBtn.addEventListener('click', openAddModal);
 emptyAddBtn.addEventListener('click', openAddModal);
 
-/* ============================================================
-   18. MODAL CHROME
-   ============================================================ */
 document.querySelectorAll('[data-close]').forEach(btn => btn.addEventListener('click', () => closeModal(btn.dataset.close)));
 document.querySelectorAll('.modal-backdrop').forEach(bd => bd.addEventListener('click', (e) => { if (e.target === bd) bd.hidden = true; }));
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') document.querySelectorAll('.modal-backdrop').forEach(bd => bd.hidden = true); });
 
-/* ============================================================
-   19. THEME TOGGLE
-   ============================================================ */
 const savedTheme = localStorage.getItem('upi_theme');
 if (savedTheme) { document.body.dataset.theme = savedTheme; themeToggle.textContent = savedTheme === 'dark' ? '☀️' : '🌙'; }
 themeToggle.addEventListener('click', () => {
@@ -1658,41 +1757,20 @@ themeToggle.addEventListener('click', () => {
 });
 
 /* ============================================================
-   20. REALTIME
+   13. INIT
    ============================================================ */
-function subscribeRealtime() {
-  sb.channel('public:apps')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'apps' }, async () => { await fetchApps(); renderApps(); renderStats(); if (isAdmin) refreshReports(); })
-    .subscribe();
-  sb.channel('public:votes')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'votes' }, async () => { await fetchVotes(); renderApps(); renderStats(); })
-    .subscribe();
-  sb.channel('public:reports')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'reports' }, () => { if (isAdmin) refreshReports(); })
-    .subscribe();
-}
-
-/* ============================================================
-   21. INIT
-   ============================================================ */
-const urlIconLabel = $('urlIconLabel');
-
-async function init() {
+function init() {
   if (!isConfigured) {
     connBanner.hidden = false;
     loadingState.hidden = true;
     emptyState.hidden = false;
-    emptyState.querySelector('p').textContent = '⚠️ Connect your Supabase project to start using the ledger (see banner above).';
+    emptyState.querySelector('p').textContent = '⚠️ Connect your Firebase project to start using the ledger.';
     emptyAddBtn.hidden = true;
     return;
   }
-  try {
-    const { data: { session } } = await sb.auth.getSession();
-    setAdminState(!!session);
-  } catch (e) { console.warn(e); }
-  sb.auth.onAuthStateChange((_event, session) => setAdminState(!!session));
-  await loadAll();
-  subscribeRealtime();
+  auth.onAuthStateChanged(user => setAdminState(!!user));
+  listenApps();
+  listenVotes();
 }
 document.addEventListener('DOMContentLoaded', init);
 </script>
