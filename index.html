@@ -3,7 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>UPI Referral Ledger</title>
+<title>UPI Referral Ledger — Cashback & Referral Tracker</title>
+<meta name="description" content="Find UPI apps giving joining & referral cashback, track who you've referred, and vote apps up or down based on whether offers still work.">
+<link class="favicon" rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%231F7A4D'/%3E%3Ctext x='50' y='68' font-size='58' text-anchor='middle' fill='white' font-family='Georgia'%3E%E2%82%B9%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
   :root{
@@ -14,156 +18,613 @@
     --stamp:#B4472D; --stamp-soft:#F6DFD7;
     --blue:#33588F; --blue-soft:#DDE6F6;
     --line:#DAD3BF; --line-soft:#E8E3D3;
-    --radius:14px; --shadow:0 4px 18px rgba(27,42,46,0.08);
-    --font-display:'Space Grotesk',sans-serif; --font-body:'Inter',sans-serif; --font-mono:'IBM Plex Mono',monospace;
+    --radius:14px; --radius-sm:8px;
+    --shadow:0 4px 18px rgba(27,42,46,0.08);
+    --shadow-lg:0 16px 40px rgba(27,42,46,0.18);
+    --font-display:'Space Grotesk',sans-serif;
+    --font-body:'Inter',sans-serif;
+    --font-mono:'IBM Plex Mono',monospace;
   }
   [data-theme="dark"]{
     --paper:#15201F; --paper-alt:#1C2826; --paper-raised:#1F2C2A;
     --ink:#EDEAE0; --ink-soft:#AEBBB8; --ink-faint:#76847F;
     --green:#3FCB81; --green-deep:#2E9C63; --green-soft:#1E332A;
-    --gold:#E0B458; --gold-soft:#332B17; --stamp:#E07457; --stamp-soft:#3A2420;
-    --blue:#7FA6E0; --blue-soft:#1C2A3A; --line:#33433F; --line-soft:#283733;
+    --gold:#E0B458; --gold-soft:#332B17;
+    --stamp:#E07457; --stamp-soft:#3A2420;
+    --blue:#7FA6E0; --blue-soft:#1C2A3A;
+    --line:#33433F; --line-soft:#283733;
+    --shadow:0 4px 18px rgba(0,0,0,0.35);
+    --shadow-lg:0 16px 40px rgba(0,0,0,0.5);
   }
   *{box-sizing:border-box;}
-  body{ margin:0; background:var(--paper); color:var(--ink); font-family:var(--font-body); line-height:1.5; transition:background .25s, color .25s; }
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:var(--font-body); line-height:1.5;
+    transition:background .25s ease, color .25s ease;
+    background-image: linear-gradient(var(--line-soft) 1px, transparent 1px);
+    background-size: 100% 32px;
+    background-attachment:local;
+  }
+  @media (prefers-reduced-motion:reduce){ *{transition:none!important; animation:none!important; scroll-behavior:auto!important;} }
+  ::selection{ background:var(--green-soft); }
+  :focus-visible{ outline:2px solid var(--green); outline-offset:2px; border-radius:4px; }
+  a{ color:var(--green-deep); }
+  code{ background:var(--paper-alt); padding:2px 6px; border-radius:4px; font-family:var(--font-mono); }
+
+  .conn-banner{
+    background:var(--stamp-soft); color:var(--stamp); border-bottom:1px solid var(--stamp);
+    text-align:center; padding:10px 16px; font-size:14px; font-family:var(--font-body);
+  }
+
   .site-header{ background:var(--ink); color:var(--paper); position:sticky; top:0; z-index:30; box-shadow:var(--shadow);}
   [data-theme="dark"] .site-header{ background:#0E1716; }
   .header-inner{ max-width:1080px; margin:0 auto; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; gap:16px;}
   .brand{ display:flex; align-items:center; gap:12px; }
-  .brand-mark{ font-family:var(--font-display); font-weight:700; font-size:22px; color:var(--ink); background:var(--green); width:42px; height:42px; border-radius:10px; display:flex; align-items:center; justify-content:center; transform:rotate(-3deg); box-shadow:var(--shadow); }
-  .brand-title{ font-family:var(--font-display); font-weight:700; font-size:19px; }
-  .brand-sub{ font-size:12.5px; color:#B9C7C5; display:block; }
+  .brand-mark{
+    font-family:var(--font-display); font-weight:700; font-size:22px; color:var(--ink);
+    background:var(--green); width:42px; height:42px; border-radius:10px;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+    transform:rotate(-3deg); box-shadow:var(--shadow);
+  }
+  .brand-text{ display:flex; flex-direction:column; line-height:1.2; }
+  .brand-title{ font-family:var(--font-display); font-weight:700; font-size:19px; letter-spacing:.2px;}
+  .brand-sub{ font-size:12.5px; color:#B9C7C5; }
   .header-actions{ display:flex; gap:10px; align-items:center; }
-  
-  .primary-btn, .ghost-btn, .icon-btn{ font-family:var(--font-body); font-weight:600; cursor:pointer; border:none; border-radius:10px; padding:10px 16px; font-size:14px; }
+  .user-chip{
+    display:flex; align-items:center; gap:8px; background:var(--paper-alt); border:1.5px solid var(--line);
+    border-radius:20px; padding:4px 10px 4px 4px; font-size:13px; color:var(--ink);
+  }
+  .user-avatar{ width:24px; height:24px; border-radius:50%; object-fit:cover; background:var(--green-soft); flex-shrink:0; }
+  .user-chip .user-name{ font-weight:600; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .signin-gate{
+    text-align:center; padding:32px 20px; background:var(--paper-raised); border:1px dashed var(--line);
+    border-radius:var(--radius); box-shadow:var(--shadow);
+  }
+  .signin-gate p{ color:var(--ink-soft); font-size:14px; margin-bottom:14px; max-width:420px; margin-left:auto; margin-right:auto; }
+
+  .primary-btn, .ghost-btn, .danger-btn, .icon-btn{
+    font-family:var(--font-body); font-weight:600; cursor:pointer; border:none;
+    border-radius:10px; padding:10px 16px; font-size:14px; transition:transform .12s ease, filter .12s ease;
+  }
   .primary-btn{ background:var(--green); color:#fff; box-shadow:var(--shadow);}
+  .primary-btn:hover{ filter:brightness(1.08); transform:translateY(-1px); }
+  .primary-btn:disabled{ background:var(--ink-faint); cursor:not-allowed; transform:none; filter:none; }
   .ghost-btn{ background:transparent; color:inherit; border:1.5px solid currentColor; opacity:.85;}
-  .icon-btn{ background:transparent; color:inherit; font-size:18px; padding:6px 9px; }
-  
+  .ghost-btn:hover{ opacity:1; transform:translateY(-1px); }
+  .ghost-btn.small{ padding:6px 12px; font-size:12.5px; }
+  .danger-btn{ background:var(--stamp); color:#fff; }
+  .danger-btn:hover{ filter:brightness(1.1); }
+  .icon-btn{ background:transparent; color:inherit; font-size:18px; padding:6px 9px; border-radius:8px; }
+  .icon-btn:hover{ background:rgba(255,255,255,.12); }
+
   .container{ max-width:1080px; margin:0 auto; padding:12px 20px 40px; }
+  .stats-strip{
+    display:grid; grid-template-columns:repeat(4,1fr); gap:0;
+    background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius);
+    box-shadow:var(--shadow); overflow:hidden; margin-bottom:14px;
+  }
+  .stat-item{ padding:12px 14px; text-align:center; border-right:1px dashed var(--line); }
+  .stat-item:last-child{ border-right:none; }
+  .stat-item-wide{ grid-column:span 1; }
+  .stat-num{ display:block; font-family:var(--font-mono); font-size:18px; font-weight:600; color:var(--green-deep);}
+  .stat-item-wide .stat-num{ color:var(--ink); font-size:15px; }
+  .stat-label{ font-size:11px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.4px;}
+  @media (max-width:680px){ .stats-strip{ grid-template-columns:repeat(2,1fr); } .stat-item{ border-bottom:1px dashed var(--line);} }
+
   .tabs{ display:flex; gap:8px; margin-bottom:14px; border-bottom:1px solid var(--line); }
-  .tab-btn{ background:none; border:none; padding:8px 4px; margin-right:14px; font-family:var(--font-display); font-weight:600; font-size:14.5px; color:var(--ink-soft); cursor:pointer; border-bottom:3px solid transparent; }
+  .tab-btn{
+    background:none; border:none; padding:8px 4px; margin-right:14px; font-family:var(--font-display);
+    font-weight:600; font-size:14.5px; color:var(--ink-soft); cursor:pointer; border-bottom:3px solid transparent; transform:translateY(1px);
+  }
   .tab-btn.active{ color:var(--ink); border-bottom-color:var(--green); }
-  
+
   .controls-bar{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; align-items:center; }
-  .controls-bar input, .controls-bar select{ padding:8px 12px; border-radius:10px; border:1.5px solid var(--line); background:var(--paper-raised); color:var(--ink); font-size:13.5px; flex:1 1 200px;}
-  
+  .controls-bar input[type="search"], .controls-bar select, .controls-bar input[type="text"]{
+    font-family:var(--font-body); padding:8px 12px; border-radius:10px; border:1.5px solid var(--line);
+    background:var(--paper-raised); color:var(--ink); font-size:13.5px;
+  }
+  #searchInput{ flex:1 1 200px; min-width:150px; }
+  .checkbox-pill{ display:flex; align-items:center; gap:6px; font-size:13px; color:var(--ink-soft); background:var(--paper-raised); border:1.5px solid var(--line); border-radius:20px; padding:6px 12px; }
+
+  .loading-state{ display:flex; flex-direction:column; gap:8px; }
+  .skeleton-row{ height:64px; border-radius:var(--radius); background:linear-gradient(90deg,var(--paper-alt) 25%, var(--line-soft) 37%, var(--paper-alt) 63%); background-size:400% 100%; animation:shimmer 1.4s infinite; }
+  @keyframes shimmer{ 0%{background-position:100% 0;} 100%{background-position:-100% 0;} }
+  .empty-state{ text-align:center; padding:40px 20px; color:var(--ink-soft); }
+  .empty-state p{ font-size:14.5px; margin-bottom:12px; }
+
   .ledger-list{ background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; }
-  .ledger-row{ display:grid; grid-template-columns:42px 1.6fr 1fr 1fr 70px auto; gap:12px; align-items:center; padding:12px 16px; border-bottom:1px dashed var(--line); }
+  .ledger-row{
+    display:grid; grid-template-columns:42px 1.6fr 1fr 1fr 70px auto; gap:12px; align-items:center;
+    padding:12px 16px; border-bottom:1px dashed var(--line); position:relative;
+    animation:fadeIn .35s ease both;
+  }
+  @keyframes fadeIn{ from{ opacity:0; transform:translateY(4px);} to{opacity:1; transform:translateY(0);} }
   .ledger-row:last-child{ border-bottom:none; }
+  .ledger-row:hover{ background:var(--paper-alt); }
+  .ledger-serial{ font-family:var(--font-mono); font-size:12px; color:var(--ink-faint); }
+  .row-main{ min-width:0; }
+  .row-name-line{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
   .row-name{ font-family:var(--font-display); font-weight:700; font-size:15.5px; }
-  .badge{ font-size:10.5px; font-weight:600; padding:2px 6px; border-radius:20px; }
+  .badge{ font-size:10.5px; font-weight:600; padding:2px 6px; border-radius:20px; white-space:nowrap; }
   .badge-verified{ background:var(--green-soft); color:var(--green-deep); }
-  .app-icon{ width:28px; height:28px; border-radius:8px; object-fit:cover; background:var(--green); color:#fff; display:inline-flex; align-items:center; justify-content:center; font-weight:700;}
+  .badge-new{ background:var(--gold-soft); color:var(--gold); }
+  .badge-category{ background:var(--paper-alt); color:var(--ink-soft); }
+  .badge-top{ background:var(--gold); color:#2b2106; }
+
+  .app-icon-wrap{ display:inline-flex; flex-shrink:0; }
+  .app-icon{
+    width:28px; height:28px; border-radius:8px; object-fit:cover; flex-shrink:0;
+    display:inline-flex; align-items:center; justify-content:center;
+    font-family:var(--font-display); font-weight:700; font-size:12px; color:#fff;
+    background:var(--green); line-height:1;
+  }
+  img.app-icon {
+    background: #FFFFFF !important;
+    object-fit: contain;
+  }
+  
+  .app-icon.lg{ width:44px; height:44px; border-radius:11px; font-size:16px; }
+  .app-icon.sm{ width:22px; height:22px; border-radius:6px; font-size:10px; }
+  .icon-preview-row{ display:flex; align-items:center; gap:10px; margin-top:-4px; }
+  .icon-preview-row span.hint{ font-size:12px; color:var(--ink-soft); font-weight:400; }
+  .file-input-wrapper { display:flex; flex-direction:column; gap:6px; }
+  .file-input-wrapper input[type="file"] { font-size:13px; color:var(--ink-soft); }
+
+  .row-meta{ font-size:11.5px; color:var(--ink-faint); margin-top:2px; }
+  .row-notes{ font-size:12.5px; color:var(--ink-soft); margin-top:4px; max-width:560px; }
+  .row-notes .more-btn{ background:none; border:none; color:var(--green-deep); font-weight:600; cursor:pointer; font-size:12px; padding:0; margin-left:4px;}
+  .bonus-col{ font-family:var(--font-mono); }
+  .bonus-label{ font-size:10px; text-transform:uppercase; letter-spacing:.4px; color:var(--ink-faint); display:block; }
   .bonus-amount{ font-size:14px; font-weight:600; color:var(--green-deep); }
+  [data-theme="dark"] .bonus-amount{ color:var(--green); }
+  .bonus-amount.none{ color:var(--ink-faint); font-weight:400; }
+
+  .stamp-pct{
+    width:50px; height:50px; border-radius:50%; position:relative; transform:rotate(-4deg);
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .stamp-pct::before{ content:''; position:absolute; inset:4px; border-radius:50%; background:var(--paper-raised); }
+  .stamp-pct span{ position:relative; transform:rotate(4deg); font-family:var(--font-mono); font-weight:700; font-size:12px; }
+  .stamp-pct.novotes{ background:repeating-conic-gradient(var(--line) 0deg 10deg, transparent 10deg 20deg); }
+  .stamp-pct.novotes span{ font-size:9.5px; color:var(--ink-faint); }
+
+  .row-actions{ display:flex; flex-direction:column; gap:6px; align-items:flex-end; }
+  .vote-row{ display:flex; gap:6px; }
+  .vote-btn{
+    font-family:var(--font-mono); font-size:11.5px; border:1.5px solid var(--line); background:var(--paper-raised);
+    border-radius:8px; padding:5px 8px; cursor:pointer; color:var(--ink-soft); display:flex; align-items:center; gap:4px;
+  }
+  .vote-btn:hover{ border-color:var(--green); }
+  .vote-btn.active.working{ background:var(--green-soft); border-color:var(--green); color:var(--green-deep); }
+  .vote-btn.active.not_working{ background:var(--stamp-soft); border-color:var(--stamp); color:var(--stamp); }
+  .row-links{ display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;}
+  .link-btn{ background:none; border:none; color:var(--ink-soft); font-size:11.5px; cursor:pointer; text-decoration:underline; padding:0; }
+  .link-btn:hover{ color:var(--green-deep); }
+  .link-btn.danger{ color:var(--stamp); }
+
+  @media (max-width:760px){
+    .ledger-row{ grid-template-columns:1fr; padding:14px; }
+    .row-actions{ align-items:flex-start; flex-direction:row; justify-content:space-between; }
+    .stamp-pct{ position:absolute; top:12px; right:14px; }
+    .row-actions{ margin-top:4px; }
+  }
+
+  .ledger-intro h2{ font-family:var(--font-display); margin:0 0 4px; }
+  .ledger-intro p{ color:var(--ink-soft); font-size:13.5px; margin:0 0 14px; }
+
+  .matrix-toolbar{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
+  .matrix-toolbar input{
+    font-family:var(--font-body); padding:8px 12px; border-radius:10px; border:1.5px solid var(--line);
+    background:var(--paper-raised); color:var(--ink); font-size:13.5px; flex:1 1 160px; min-width:130px;
+  }
+
+  .matrix-legend{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
+  .legend-chip{ font-size:11px; font-weight:600; padding:4px 8px; border-radius:20px; border:1px solid transparent; white-space:nowrap; }
+
+  .cell-empty{ background:var(--paper-alt); color:var(--ink-faint); }
+  .cell-in_progress{ background:var(--gold-soft); color:var(--gold); }
+  .cell-referred{ background:var(--green-soft); color:var(--green-deep); }
+  .cell-already_user{ background:var(--blue-soft); color:var(--blue); }
+  .cell-referred_by_them{ background:var(--stamp-soft); color:var(--stamp); }
+
+  .matrix-wrap{ background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; }
+  .matrix-scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  .matrix-table{ border-collapse:separate; border-spacing:0; width:100%; }
+  .matrix-table th, .matrix-table td{ border-bottom:1px dashed var(--line); border-right:1px dashed var(--line); padding:0; }
+  .matrix-table thead th{ background:var(--paper-alt); padding:6px 4px 8px; vertical-align:bottom; }
   
-  .matrix-wrap{ background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius); overflow-x:auto; }
-  .matrix-table{ border-collapse:collapse; width:100%; font-size:12px; text-align:center; }
-  .matrix-table th, .matrix-table td{ border:1px dashed var(--line); padding:8px; }
-  .matrix-corner{ position:sticky; left:0; background:var(--paper-alt); text-align:left; z-index:2; }
-  
-  .modal-backdrop{ position:fixed; inset:0; background:rgba(15,20,20,.55); display:flex; align-items:center; justify-content:center; padding:20px; z-index:100; backdrop-filter:blur(2px); }
-  .modal-card{ background:var(--paper-raised); border-radius:18px; width:100%; max-width:400px; padding:22px 24px; }
-  .modal-form label{ display:flex; flex-direction:column; gap:5px; margin-bottom:14px; font-size:13px; font-weight:600;}
-  .modal-form input, .modal-form select{ padding:10px; border-radius:10px; border:1px solid var(--line); background:var(--paper); color:var(--ink); }
-  .modal-actions{ display:flex; justify-content:flex-end; gap:10px; }
-  
-  .toast-container{ position:fixed; bottom:20px; left:50%; transform:translateX(-50%); z-index:200; }
-  .toast{ background:var(--ink); color:var(--paper); padding:12px 16px; border-radius:10px; margin-top:8px; }
-  
-  .auth-overlay{ position:absolute; inset:0; background:rgba(251,248,241,0.9); z-index:10; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:20px;}
-  [data-theme="dark"] .auth-overlay{ background:rgba(21,32,31,0.9); }
+  /* Bug 1 Fix: CSS for Matrix App Column Headers */
+  .matrix-app-head{ padding:6px 4px 8px; text-align:center; font-size:11px; }
+  .matrix-app-head .app-head-name{ display:block; margin-top:2px; font-family:var(--font-display); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:70px; }
+  .matrix-total-head{ min-width:60px; }
+
+  .matrix-corner{
+    position:sticky; left:0; z-index:3; background:var(--paper-alt);
+    min-width:140px; text-align:left; padding:8px 12px !important; font-size:11px; color:var(--ink-soft); font-weight:600;
+  }
+  .matrix-friend-cell{
+    position:sticky; left:0; z-index:1; background:var(--paper-raised);
+    min-width:140px; max-width:180px; padding:8px 10px;
+  }
+  .matrix-row:hover td, .matrix-row:hover .matrix-friend-cell{ background:var(--paper-alt); }
+  .matrix-friend-name{ font-family:var(--font-display); font-weight:700; font-size:13px; display:flex; align-items:center; justify-content:space-between; gap:4px; }
+  .friend-actions-group { display:flex; align-items:center; gap:2px; flex-shrink:0; }
+  .friend-opt-btn{ background:none; border:none; color:var(--ink-faint); cursor:pointer; font-size:12px; padding:3px; border-radius:5px; line-height:1; }
+  .friend-opt-btn:hover{ color:var(--green-deep); background:var(--green-soft); }
+  .friend-opt-btn.del:hover{ color:var(--stamp); background:var(--stamp-soft); }
+
+  .matrix-cell-btn{
+    width:100%; height:52px; border:none; background:none; cursor:pointer; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:1px; font-family:var(--font-mono); padding:3px;
+  }
+  .matrix-cell-btn:hover{ filter:brightness(.96); }
+  [data-theme="dark"] .matrix-cell-btn:hover{ filter:brightness(1.15); }
+  .matrix-cell-btn .cell-emoji{ font-size:14px; line-height:1; }
+  .matrix-cell-btn .cell-money{ font-size:9px; font-weight:700; line-height:1.15; white-space:nowrap; }
+  .matrix-cell-btn .cell-money.received{ color:var(--green-deep); }
+  [data-theme="dark"] .matrix-cell-btn .cell-money.received{ color:var(--green); }
+  .matrix-cell-btn .cell-money.pending{ color:var(--stamp); }
+
+  .matrix-total-row td, .matrix-total-row th{ background:var(--paper-alt); font-weight:700; border-top:1.5px solid var(--line); }
+  .matrix-total-cell{ text-align:center; font-family:var(--font-mono); font-size:10px; padding:6px 4px; line-height:1.4; }
+  .matrix-friend-total{ font-family:var(--font-mono); font-size:10.5px; text-align:center; padding:6px 8px; color:var(--ink-soft); line-height:1.4; }
+
+  .col-flash { animation: flashPulse 1.5s ease-out; }
+  @keyframes flashPulse {
+    0% { background-color: var(--gold-soft); }
+    100% { background-color: var(--paper-alt); }
+  }
+
+  .matrix-summary{ display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
+  .summary-card{ background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius-sm); padding:10px 16px; box-shadow:var(--shadow); flex:1 1 130px; text-align:center; }
+  .summary-card .num{ display:block; font-family:var(--font-mono); font-weight:700; font-size:16px; color:var(--green-deep); }
+  [data-theme="dark"] .summary-card .num{ color:var(--green); }
+  .summary-card .lbl{ font-size:10.5px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.3px; }
+
+  @media (max-width:680px){
+    .matrix-toolbar input{ flex:1 1 100%; }
+    .matrix-corner, .matrix-friend-cell{ min-width:115px; max-width:135px; }
+  }
+
+  .modal-backdrop{
+    position:fixed; inset:0; background:rgba(15,20,20,.55); display:flex; align-items:center; justify-content:center;
+    padding:20px; z-index:100; backdrop-filter:blur(2px);
+  }
+  .modal-backdrop[hidden] { display: none !important; }
+  .modal-card{
+    background:var(--paper-raised); border-radius:18px; max-width:520px; width:100%; max-height:88vh; overflow-y:auto;
+    box-shadow:var(--shadow-lg); padding:22px 24px; animation:slideUp .25s ease both; border:1px solid var(--line);
+  }
+  .modal-card-sm{ max-width:380px; }
+  @keyframes slideUp{ from{ opacity:0; transform:translateY(18px) scale(.98);} to{opacity:1; transform:translateY(0) scale(1);} }
+  .modal-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+  .modal-head h3{ font-family:var(--font-display); margin:0; }
+  .modal-sub{ font-size:13px; color:var(--ink-soft); margin:-6px 0 4px;}
+  .modal-form{ display:flex; flex-direction:column; gap:14px; }
+  .modal-form label{ display:flex; flex-direction:column; gap:5px; font-size:13px; font-weight:600; color:var(--ink-soft); }
+  .modal-form input[type=text], .modal-form input[type=email], .modal-form input[type=password], .modal-form input[type=number], .modal-form textarea{
+    font-family:var(--font-body); font-weight:400; padding:10px 12px; border-radius:10px; border:1.5px solid var(--line);
+    background:var(--paper); color:var(--ink); font-size:14.5px; resize:vertical;
+  }
+  .modal-actions{ display:flex; justify-content:flex-end; gap:10px; margin-top:4px; }
+  .confirm-message{ font-size:15px; margin:6px 0 18px; }
+
+  .toast-container{ position:fixed; bottom:20px; left:50%; transform:translateX(-50%); display:flex; flex-direction:column; gap:8px; z-index:200; width:min(360px,90vw); }
+  .toast{
+    background:var(--ink); color:var(--paper); padding:12px 16px; border-radius:10px; font-size:13.5px;
+    box-shadow:var(--shadow-lg); animation:toastIn .25s ease both;
+  }
+  .toast.error{ background:var(--stamp); }
+  .toast.success{ background:var(--green-deep); }
+  @keyframes toastIn{ from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
+  .count-badge{ background:var(--stamp); color:#fff; font-size:10.5px; font-weight:700; border-radius:10px; padding:1px 6px; margin-left:4px; }
+
+  .site-footer{ text-align:center; padding:24px 20px 40px; color:var(--ink-faint); font-size:12px; max-width:680px; margin:0 auto; }
+  .footer-fine{ margin-top:4px; }
 </style>
 </head>
 <body data-theme="light">
+
+<div id="connBanner" class="conn-banner" hidden>
+  ⚠️ <strong>Not connected yet.</strong> Verify your <code>firebaseConfig</code> credentials inside <code>index.html</code>.
+</div>
 
 <header class="site-header">
   <div class="header-inner">
     <div class="brand">
       <span class="brand-mark">₹</span>
-      <div>
+      <div class="brand-text">
         <span class="brand-title">UPI Referral Ledger</span>
-        <span class="brand-sub">Community cashback tracker</span>
+        <span class="brand-sub">Cashback offers, tracked &amp; verified by the crowd</span>
       </div>
     </div>
     <div class="header-actions">
-      <button id="themeToggle" class="icon-btn">🌙</button>
-      <button id="googleLoginBtn" class="ghost-btn">Sign in with Google</button>
-      <button id="logoutBtn" class="ghost-btn" hidden>Sign out</button>
+      <button id="themeToggle" class="icon-btn" title="Toggle dark mode" aria-label="Toggle dark mode">🌙</button>
+      <button id="googleSignInBtn" class="ghost-btn">🔑 Sign in with Google</button>
+      <div id="userChip" class="user-chip" hidden>
+        <img id="userAvatar" class="user-avatar" alt="">
+        <span id="userName" class="user-name"></span>
+        <button id="signOutBtn" class="icon-btn" title="Sign out" aria-label="Sign out">↪️</button>
+      </div>
     </div>
   </div>
 </header>
 
-<main class="container" id="mainContent">
-  <div class="tabs">
-    <button class="tab-btn active" id="tabApps">📒 Browse apps</button>
-    <button class="tab-btn" id="tabLedger">👥 My Referral Matrix</button>
+<main class="container">
+
+  <section class="stats-strip" aria-label="Summary stats">
+    <div class="stat-item">
+      <span class="stat-num" id="statTotalApps">—</span>
+      <span class="stat-label">Apps listed</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-num" id="statVerified">—</span>
+      <span class="stat-label">Admin verified</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-num" id="statTotalVotes">—</span>
+      <span class="stat-label">Votes cast</span>
+    </div>
+    <div class="stat-item stat-item-wide">
+      <span class="stat-num" id="statTopApp">—</span>
+      <span class="stat-label">Top rated right now</span>
+    </div>
+  </section>
+
+  <div class="tabs" role="tablist">
+    <button class="tab-btn active" id="tabApps" role="tab" aria-selected="true">📒 Browse apps</button>
+    <button class="tab-btn" id="tabLedger" role="tab" aria-selected="false">👥 Referral matrix</button>
   </div>
 
-  <section id="appsPanel">
+  <section id="appsPanel" class="tab-panel">
+
     <div class="controls-bar">
-      <input id="searchInput" type="search" placeholder="Search apps...">
-      <button id="addAppBtn" class="primary-btn">＋ Add app</button>
+      <input id="searchInput" type="search" placeholder="🔍 Search apps by name…" aria-label="Search apps">
+      <select id="categoryFilter" aria-label="Filter by category"><option value="">All categories</option></select>
+      <select id="sortSelect" aria-label="Sort apps">
+        <option value="top">⭐ Top rated</option>
+        <option value="newest">🆕 Newest first</option>
+        <option value="joining">💰 Highest joining bonus</option>
+        <option value="referral">🤝 Highest referral bonus</option>
+        <option value="az">🔤 A–Z</option>
+      </select>
+      <label class="checkbox-pill">
+        <input type="checkbox" id="verifiedOnlyCheckbox"> Verified only
+      </label>
+      <button id="addAppBtn" class="primary-btn">＋ Add an app</button>
     </div>
-    <div id="appsList" class="ledger-list"></div>
+
+    <div id="loadingState" class="loading-state">
+      <div class="skeleton-row"></div>
+      <div class="skeleton-row"></div>
+      <div class="skeleton-row"></div>
+    </div>
+
+    <div id="emptyState" class="empty-state" hidden>
+      <p>📭 No apps match this yet.</p>
+      <button class="primary-btn" id="emptyAddBtn">＋ Be the first to add one</button>
+    </div>
+
+    <div id="appsList" class="ledger-list" hidden></div>
+
   </section>
 
-  <section id="ledgerPanel" style="position:relative;" hidden>
-    <div id="authWall" class="auth-overlay">
-      <h3>Sign in to track referrals</h3>
-      <p>Your grid is synced securely to your Google account.</p>
-      <button class="primary-btn" onclick="document.getElementById('googleLoginBtn').click()">Sign in with Google</button>
+  <section id="ledgerPanel" class="tab-panel" hidden>
+    <div class="ledger-intro">
+      <h2>👥 Referral matrix</h2>
+      <p>Every app you've listed is already a column here — just add friends as rows and tap a cell to mark progress. Synced to your Google account, so it's there on any device and never lost.</p>
     </div>
-    
-    <div class="controls-bar">
+
+    <div id="matrixSignInState" class="signin-gate" hidden>
+      <p>🔑 Sign in with Google to start tracking referrals — your friends and progress are saved to your account and stay in sync everywhere you're signed in.</p>
+      <button id="matrixSignInBtn" class="primary-btn">Sign in with Google</button>
+    </div>
+
+    <div class="matrix-toolbar">
+      <input id="friendSearch" type="search" placeholder="🔍 Search friends…" aria-label="Search friends">
+      <input id="appSearchMatrix" type="search" placeholder="🔍 Search apps…" aria-label="Search apps">
       <button id="addFriendBtn" class="primary-btn">＋ Add friend</button>
     </div>
-    <div class="matrix-wrap">
-      <table class="matrix-table" id="matrixTable"></table>
+
+    <div class="matrix-legend">
+      <span class="legend-chip cell-empty">⬜ Not started</span>
+      <span class="legend-chip cell-in_progress">⏳ In progress</span>
+      <span class="legend-chip cell-referred">✅ Already referred</span>
+      <span class="legend-chip cell-already_user">👤 Already a user</span>
+      <span class="legend-chip cell-referred_by_them">🔁 Referred by them</span>
     </div>
+
+    <div id="matrixNoAppsState" class="empty-state" hidden>
+      <p>📭 No apps listed yet. Add an app in the <strong>Browse apps</strong> tab first, then come back here.</p>
+    </div>
+    <div id="matrixEmptyState" class="empty-state" hidden>
+      <p>👋 No friends yet. Add your first friend to start the grid.</p>
+      <button class="primary-btn" id="emptyAddFriendBtn">＋ Add a friend</button>
+    </div>
+
+    <div class="matrix-wrap" id="matrixWrap" hidden>
+      <div class="matrix-scroll" id="matrixScroll">
+        <table class="matrix-table" id="matrixTable"></table>
+      </div>
+    </div>
+
+    <div class="matrix-summary" id="matrixSummary" hidden></div>
   </section>
+
+
 </main>
 
-<!-- Modals -->
-<div class="modal-backdrop" id="friendModal" hidden>
-  <div class="modal-card">
-    <h3>Add a Friend</h3>
-    <form id="friendForm" class="modal-form">
-      <label>Name <input type="text" id="friendName" required></label>
+<footer class="site-footer">
+  <p>Built by the community, for the community. Cashback offers change often — vote to keep this list honest. Not affiliated with any bank, NPCI, or UPI app.</p>
+  <p class="footer-fine">Have feedback? Add an app, report a dead offer, or open an issue on the GitHub repo.</p>
+</footer>
+
+<div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
+<div class="modal-backdrop" id="addAppModalBackdrop" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="addAppTitle">
+    <div class="modal-head">
+      <h3 id="addAppTitle">＋ Add an app</h3>
+      <button class="icon-btn" data-close="addAppModalBackdrop" aria-label="Close">✕</button>
+    </div>
+    <form id="addAppForm" class="modal-form">
+      <input type="hidden" id="editAppId">
+      <label>App name *
+        <input id="f_name" type="text" required maxlength="60" placeholder="e.g. Navi, Groww, CRED">
+      </label>
+      <label>Category
+        <input id="f_category" type="text" list="categoryOptions" placeholder="e.g. Payments, Investment, Banking">
+        <datalist id="categoryOptions">
+          <option value="Payments">
+          <option value="Investment & Trading">
+          <option value="Banking">
+          <option value="Shopping & Rewards">
+          <option value="Credit Cards">
+          <option value="Recharge & Bills">
+          <option value="Gaming">
+          <option value="Other">
+        </datalist>
+      </label>
+      
+      <label id="urlIconLabel">App icon URL (optional)
+        <input id="f_icon" type="text" placeholder="https://example.com/logo.png">
+      </label>
+      
+      <div class="icon-preview-row">
+        <span id="iconPreview"></span>
+        <span class="hint">Preview — auto-generated if left completely blank</span>
+      </div>
+
+      <fieldset class="bonus-fieldset">
+        <legend>Joining bonus (for new sign-ups)</legend>
+        <div class="radio-row">
+          <label><input type="radio" name="joiningType" value="none" checked> None</label>
+          <label><input type="radio" name="joiningType" value="fixed"> Fixed amount</label>
+          <label><input type="radio" name="joiningType" value="range"> Range</label>
+        </div>
+        <div class="amount-row" id="joinFixedRow" hidden>
+          <label>Amount (₹)<input id="f_joinFixed" type="number" min="0" step="1"></label>
+        </div>
+        <div class="amount-row" id="joinRangeRow" hidden>
+          <label>Min (₹)<input id="f_joinMin" type="number" min="0" step="1"></label>
+          <label>Max (₹)<input id="f_joinMax" type="number" min="0" step="1"></label>
+        </div>
+      </fieldset>
+
+      <fieldset class="bonus-fieldset">
+        <legend>Referral bonus (per friend referred)</legend>
+        <div class="radio-row">
+          <label><input type="radio" name="referralType" value="none" checked> None</label>
+          <label><input type="radio" name="referralType" value="fixed"> Fixed amount</label>
+          <label><input type="radio" name="referralType" value="range"> Range</label>
+        </div>
+        <div class="amount-row" id="refFixedRow" hidden>
+          <label>Amount (₹)<input id="f_refFixed" type="number" min="0" step="1"></label>
+        </div>
+        <div class="amount-row" id="refRangeRow" hidden>
+          <label>Min (₹)<input id="f_refMin" type="number" min="0" step="1"></label>
+          <label>Max (₹)<input id="f_refMax" type="number" min="0" step="1"></label>
+        </div>
+      </fieldset>
+
+      <label>How to claim / notes
+        <textarea id="f_notes" rows="3" maxlength="500" placeholder="e.g. Sign up, complete KYC, bonus credited in 24h. Referral code must be entered at signup."></textarea>
+      </label>
+      <label>Your name (optional)
+        <input id="f_addedBy" type="text" maxlength="40" placeholder="Anonymous">
+      </label>
       <div class="modal-actions">
-        <button type="button" class="ghost-btn" onclick="document.getElementById('friendModal').hidden=true">Cancel</button>
-        <button type="submit" class="primary-btn">Add</button>
+        <button type="button" class="ghost-btn" data-close="addAppModalBackdrop">Cancel</button>
+        <button type="submit" class="primary-btn" id="addAppSubmitBtn">Add app</button>
       </div>
     </form>
   </div>
 </div>
 
-<div class="modal-backdrop" id="cellModal" hidden>
-  <div class="modal-card">
-    <h3 id="cellTitle">Update Status</h3>
+<div class="modal-backdrop" id="reportModalBackdrop" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="reportTitle">
+    <div class="modal-head">
+      <h3 id="reportTitle">🚩 Report an issue</h3>
+      <button class="icon-btn" data-close="reportModalBackdrop" aria-label="Close">✕</button>
+    </div>
+    <form id="reportForm" class="modal-form">
+      <input type="hidden" id="reportAppId">
+      <p id="reportAppName" class="modal-sub"></p>
+      <label>What's wrong?
+        <textarea id="reportReason" rows="3" required maxlength="300" placeholder="e.g. Offer expired, referral code not working, amount is wrong…"></textarea>
+      </label>
+      <div class="modal-actions">
+        <button type="button" class="ghost-btn" data-close="reportModalBackdrop">Cancel</button>
+        <button type="submit" class="primary-btn">Submit report</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="addFriendModalBackdrop" hidden>
+  <div class="modal-card modal-card-sm" role="dialog" aria-modal="true" aria-labelledby="addFriendTitle">
+    <div class="modal-head">
+      <h3 id="addFriendTitle">＋ Add a friend</h3>
+      <button class="icon-btn" data-close="addFriendModalBackdrop" aria-label="Close">✕</button>
+    </div>
+    <form id="addFriendForm" class="modal-form">
+      <input type="hidden" id="editFriendId">
+      <label>Friend's name
+        <input id="addFriendNameInput" type="text" required maxlength="60" placeholder="e.g. Rohit">
+      </label>
+      <div class="modal-actions">
+        <button type="button" class="ghost-btn" data-close="addFriendModalBackdrop">Cancel</button>
+        <button type="submit" class="primary-btn" id="addFriendSubmitBtn">Add to grid</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="cellModalBackdrop" hidden>
+  <div class="modal-card modal-card-sm" role="dialog" aria-modal="true" aria-labelledby="cellModalTitle">
+    <div class="modal-head">
+      <h3 id="cellModalTitle">Update status</h3>
+      <button class="icon-btn" data-close="cellModalBackdrop" aria-label="Close">✕</button>
+    </div>
     <form id="cellForm" class="modal-form">
-      <input type="hidden" id="cellFid">
-      <input type="hidden" id="cellAid">
+      <input type="hidden" id="cellFriendId">
+      <input type="hidden" id="cellAppId">
+      <p class="modal-sub" id="cellModalSub"></p>
       <label>Status
         <select id="cellStatus">
-          <option value="">Not started</option>
+          <option value="">⬜ Not started / clear this cell</option>
           <option value="in_progress">⏳ In progress</option>
           <option value="referred">✅ Already referred</option>
+          <option value="already_user">👤 Already a user</option>
+          <option value="referred_by_them">🔁 Referred by them</option>
         </select>
       </label>
-      <label>Received (₹) <input type="number" id="cellReceived"></label>
-      <label>Pending (₹) <input type="number" id="cellPending"></label>
+      <div class="amount-row">
+        <label>Received (₹)<input id="cellReceived" type="number" min="0" step="1"></label>
+        <label>Yet to receive (₹)<input id="cellPending" type="number" min="0" step="1"></label>
+      </div>
+      <label>Note (optional)
+        <input id="cellNote" type="text" maxlength="120" placeholder="e.g. Code ABC123, waiting on KYC">
+      </label>
       <div class="modal-actions">
-        <button type="button" class="ghost-btn" onclick="document.getElementById('cellModal').hidden=true">Cancel</button>
+        <button type="button" class="ghost-btn" data-close="cellModalBackdrop">Cancel</button>
         <button type="submit" class="primary-btn">Save</button>
       </div>
     </form>
   </div>
 </div>
 
-<div id="toastContainer" class="toast-container"></div>
+<div class="modal-backdrop" id="confirmModalBackdrop" hidden>
+  <div class="modal-card modal-card-sm" role="alertdialog" aria-modal="true">
+    <p id="confirmMessage" class="confirm-message"></p>
+    <div class="modal-actions">
+      <button type="button" class="ghost-btn" id="confirmCancelBtn">Cancel</button>
+      <button type="button" class="danger-btn" id="confirmOkBtn">Confirm</button>
+    </div>
+  </div>
+</div>
 
-<!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
@@ -172,138 +633,894 @@
 const firebaseConfig = {
   apiKey: "AIzaSyBK5qMGiDmNmZvXaoZL-4ADiScP7Mkhfns",
   authDomain: "freemoney-cb6b4.firebaseapp.com",
-  projectId: "freemoney-cb6b4"
+  projectId: "freemoney-cb6b4",
+  messagingSenderId: "451635864405",
+  appId: "1:451635864405:web:a13f55f72fd895988e45dc",
+  measurementId: "G-VLJ1823X5D"
 };
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
-const provider = new firebase.auth.GoogleAuthProvider();
 
+const isConfigured = !firebaseConfig.apiKey.includes('YOUR_');
+let auth, db;
 let currentUser = null;
-let appsCache = [];
+
+if (isConfigured) {
+  firebase.initializeApp(firebaseConfig);
+  auth = firebase.auth();
+  db = firebase.firestore();
+  
+  db.enablePersistence({ synchronizeTabs: true }).catch((err) => {
+    if (err.code !== 'failed-precondition' && err.code !== 'unimplemented') {
+      console.warn('Persistence notice:', err);
+    }
+  });
+}
+
+const $ = (id) => document.getElementById(id);
+
+const connBanner = $('connBanner');
+const themeToggle = $('themeToggle');
+const googleSignInBtn = $('googleSignInBtn');
+const userChip = $('userChip');
+const userAvatar = $('userAvatar');
+const userName = $('userName');
+const signOutBtn = $('signOutBtn');
+
+const statTotalApps = $('statTotalApps');
+const statVerified = $('statVerified');
+const statTotalVotes = $('statTotalVotes');
+const statTopApp = $('statTopApp');
+
+const tabApps = $('tabApps');
+const tabLedger = $('tabLedger');
+const appsPanel = $('appsPanel');
+const ledgerPanel = $('ledgerPanel');
+
+const searchInput = $('searchInput');
+const categoryFilter = $('categoryFilter');
+const sortSelect = $('sortSelect');
+const verifiedOnlyCheckbox = $('verifiedOnlyCheckbox');
+const addAppBtn = $('addAppBtn');
+const emptyAddBtn = $('emptyAddBtn');
+const loadingState = $('loadingState');
+const emptyState = $('emptyState');
+const appsList = $('appsList');
+
+const toastContainer = $('toastContainer');
+
+const matrixSignInState = $('matrixSignInState');
+const matrixSignInBtn = $('matrixSignInBtn');
+const friendSearch = $('friendSearch');
+const appSearchMatrix = $('appSearchMatrix');
+const addFriendBtn = $('addFriendBtn');
+const emptyAddFriendBtn = $('emptyAddFriendBtn');
+const matrixNoAppsState = $('matrixNoAppsState');
+const matrixEmptyState = $('matrixEmptyState');
+const matrixWrap = $('matrixWrap');
+const matrixTable = $('matrixTable');
+const matrixSummary = $('matrixSummary');
+
+const addFriendModalBackdrop = $('addFriendModalBackdrop');
+const addFriendTitle = $('addFriendTitle');
+const addFriendForm = $('addFriendForm');
+const editFriendId = $('editFriendId');
+const addFriendNameInput = $('addFriendNameInput');
+const addFriendSubmitBtn = $('addFriendSubmitBtn');
+
+const cellModalBackdrop = $('cellModalBackdrop');
+const cellForm = $('cellForm');
+const cellFriendId = $('cellFriendId');
+const cellAppId = $('cellAppId');
+const cellModalSub = $('cellModalSub');
+const cellStatus = $('cellStatus');
+const cellReceived = $('cellReceived');
+const cellPending = $('cellPending');
+const cellNote = $('cellNote');
+
+const addAppModalBackdrop = $('addAppModalBackdrop');
+const addAppTitle = $('addAppTitle');
+const addAppForm = $('addAppForm');
+const editAppId = $('editAppId');
+const f_name = $('f_name');
+const f_category = $('f_category');
+const f_icon = $('f_icon');
+const iconPreview = $('iconPreview');
+const joinFixedRow = $('joinFixedRow');
+const joinRangeRow = $('joinRangeRow');
+const f_joinFixed = $('f_joinFixed');
+const f_joinMin = $('f_joinMin');
+const f_joinMax = $('f_joinMax');
+const refFixedRow = $('refFixedRow');
+const refRangeRow = $('refRangeRow');
+const f_refFixed = $('f_refFixed');
+const f_refMin = $('f_refMin');
+const f_refMax = $('f_refMax');
+const f_notes = $('f_notes');
+const f_addedBy = $('f_addedBy');
+const addAppSubmitBtn = $('addAppSubmitBtn');
+
+const reportModalBackdrop = $('reportModalBackdrop');
+const reportAppId = $('reportAppId');
+const reportAppName = $('reportAppName');
+const reportForm = $('reportForm');
+const reportReason = $('reportReason');
+
+const confirmModalBackdrop = $('confirmModalBackdrop');
+const confirmMessage = $('confirmMessage');
+const confirmCancelBtn = $('confirmCancelBtn');
+const confirmOkBtn = $('confirmOkBtn');
+const urlIconLabel = $('urlIconLabel');
+
+const CACHE_APPS_KEY = 'upi_cached_apps_v1';
+const CACHE_VOTES_KEY = 'upi_cached_votes_v1';
+
+function getLocalData(key, fallback = []) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch (e) {
+    return fallback;
+  }
+}
+
+function setLocalData(key, val) {
+  try {
+    localStorage.setItem(key, JSON.stringify(val));
+  } catch (e) {}
+}
+
+let appsCache = getLocalData(CACHE_APPS_KEY, []);
+let votesAgg = {};
+let myVotes = {};
+
+const DEVICE_KEY = 'upi_device_id';
+let deviceId = localStorage.getItem(DEVICE_KEY);
+if (!deviceId) {
+  deviceId = crypto.randomUUID ? crypto.randomUUID() : 'd' + Date.now() + Math.random().toString(36).slice(2);
+  localStorage.setItem(DEVICE_KEY, deviceId);
+}
+
+function computeVoteState(rawVotes) {
+  votesAgg = {};
+  myVotes = {};
+  (rawVotes || []).forEach(v => {
+    if (!votesAgg[v.app_id]) votesAgg[v.app_id] = { working: 0, not_working: 0 };
+    if (votesAgg[v.app_id][v.vote_type] !== undefined) votesAgg[v.app_id][v.vote_type]++;
+    if (v.device_id === deviceId) myVotes[v.app_id] = v.vote_type;
+  });
+}
+
+computeVoteState(getLocalData(CACHE_VOTES_KEY, []));
+
+function escapeHtml(str) {
+  return String(str ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+function truncate(str, n) { return str.length > n ? str.slice(0, n).trim() + '…' : str; }
+function formatBonus(type, min, max) {
+  if (type === 'fixed') return '₹' + Math.round(Number(min) || 0).toLocaleString('en-IN');
+  if (type === 'range') return '₹' + Math.round(Number(min) || 0).toLocaleString('en-IN') + '–₹' + Math.round(Number(max) || 0).toLocaleString('en-IN');
+  return '—';
+}
+function bonusMaxValue(type, min, max) { if (type === 'none') return 0; return type === 'fixed' ? (Number(min) || 0) : (Number(max) || 0); }
+function timeAgo(dateStr) {
+  if (!dateStr) return 'just now';
+  const diffMs = Date.now() - new Date(dateStr).getTime();
+  const sec = diffMs / 1000;
+  if (sec < 60) return 'just now';
+  const min = sec / 60; if (min < 60) return Math.floor(min) + 'm ago';
+  const hr = min / 60; if (hr < 24) return Math.floor(hr) + 'h ago';
+  const day = hr / 24; if (day < 30) return Math.floor(day) + 'd ago';
+  const mo = day / 30; if (mo < 12) return Math.floor(mo) + 'mo ago';
+  return Math.floor(mo / 12) + 'y ago';
+}
+function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
+function toast(msg, type = 'info') {
+  const el = document.createElement('div');
+  el.className = 'toast' + (type !== 'info' ? ' ' + type : '');
+  el.textContent = msg;
+  toastContainer.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity .3s'; setTimeout(() => el.remove(), 300); }, 3200);
+}
+function openModal(id) { $(id).hidden = false; }
+function closeModal(id) { $(id).hidden = true; }
+function confirmAction(message) {
+  return new Promise(resolve => {
+    confirmMessage.textContent = message;
+    openModal('confirmModalBackdrop');
+    confirmOkBtn.addEventListener('click', () => { closeModal('confirmModalBackdrop'); resolve(true); }, { once: true });
+    confirmCancelBtn.addEventListener('click', () => { closeModal('confirmModalBackdrop'); resolve(false); }, { once: true });
+  });
+}
+function getVoteStats(appId) {
+  const v = votesAgg[appId] || { working: 0, not_working: 0 };
+  const total = v.working + v.not_working;
+  const pct = total ? Math.round((v.working / total) * 100) : null;
+  return { ...v, total, pct };
+}
+
+const STATUS_META = {
+  in_progress:       { label: 'In progress',       emoji: '⏳' },
+  referred:          { label: 'Already referred',  emoji: '✅' },
+  already_user:      { label: 'Already a user',    emoji: '👤' },
+  referred_by_them:  { label: 'Referred by them',  emoji: '🔁' }
+};
+
+const AVATAR_COLORS = ['#1F7A4D', '#C8932E', '#B4472D', '#33588F', '#7A4DB4', '#1F7A9C', '#9C5D1F', '#2E7D6B'];
+function colorForName(name) {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) % AVATAR_COLORS.length;
+  return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length];
+}
+
+function appIconHtml(app, sizeClass = '') {
+  const name = app.name || '?';
+  const letter = name.trim().charAt(0).toUpperCase() || '?';
+  const bg = colorForName(name);
+  const safeName = escapeHtml(name);
+  const url = (app.icon_url || '').trim();
+
+  if (url) {
+    const safeUrl = escapeHtml(url);
+    return `
+      <span class="app-icon-wrap" style="position:relative; display:inline-flex;">
+        <img class="app-icon ${sizeClass}" 
+             src="${safeUrl}" 
+             alt="${safeName} icon" 
+             loading="lazy"
+             referrerpolicy="no-referrer"
+             onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-flex';">
+        <span class="app-icon ${sizeClass}" style="background:${bg}; display:none;">${letter}</span>
+      </span>`;
+  }
+
+  return `<span class="app-icon-wrap"><span class="app-icon ${sizeClass}" style="background:${bg}">${letter}</span></span>`;
+}
+function uid() { return crypto.randomUUID ? crypto.randomUUID() : 'id' + Date.now() + Math.random().toString(36).slice(2); }
+
+/* Referral tracking (friends + matrix) is per-user data, stored in Firestore
+   under users/{uid}/friends and users/{uid}/matrix so it's available on any
+   device the person signs into with Google — never just in one browser. */
 let friendsCache = [];
 let matrixCache = [];
+let unsubFriends = null, unsubMatrix = null;
 
-// UI Elements
-const toastContainer = document.getElementById('toastContainer');
-const loginBtn = document.getElementById('googleLoginBtn');
-const logoutBtn = document.getElementById('logoutBtn');
-const authWall = document.getElementById('authWall');
+function userFriendsCol() { return db.collection('users').doc(currentUser.uid).collection('friends'); }
+function userMatrixCol() { return db.collection('users').doc(currentUser.uid).collection('matrix'); }
+function cellDocId(friendId, appId) { return friendId + '__' + appId; }
 
-function toast(msg) {
-  const el = document.createElement('div'); el.className = 'toast'; el.textContent = msg;
-  toastContainer.appendChild(el);
-  setTimeout(() => el.remove(), 3000);
+function listenUserData() {
+  if (unsubFriends) { unsubFriends(); unsubFriends = null; }
+  if (unsubMatrix) { unsubMatrix(); unsubMatrix = null; }
+  if (!currentUser) { friendsCache = []; matrixCache = []; renderMatrixPanel(); return; }
+
+  unsubFriends = userFriendsCol().onSnapshot(snap => {
+    friendsCache = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    renderMatrixPanel();
+  }, err => toast('Error loading friends: ' + err.message, 'error'));
+
+  unsubMatrix = userMatrixCol().onSnapshot(snap => {
+    matrixCache = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    renderMatrixPanel();
+  }, err => toast('Error loading tracking data: ' + err.message, 'error'));
 }
 
-// Authentication
-loginBtn.addEventListener('click', () => auth.signInWithPopup(provider).catch(e => toast(e.message)));
-logoutBtn.addEventListener('click', () => auth.signOut());
+function loadFriends() { return friendsCache; }
+function loadMatrix() { return matrixCache; }
 
-auth.onAuthStateChanged(user => {
-  currentUser = user;
-  if (user) {
-    loginBtn.hidden = true; logoutBtn.hidden = false;
-    authWall.hidden = true;
-    loadUserData(user.uid);
-  } else {
-    loginBtn.hidden = false; logoutBtn.hidden = true;
-    authWall.hidden = false;
-    friendsCache = []; matrixCache = [];
-    renderMatrix();
+async function addFriend(name) {
+  const ref = await userFriendsCol().add({ name, created_at: new Date().toISOString() });
+  return { id: ref.id, name };
+}
+async function renameFriend(friendId, newName) {
+  await userFriendsCol().doc(friendId).update({ name: newName });
+}
+async function deleteFriend(friendId) {
+  await userFriendsCol().doc(friendId).delete();
+  const toDelete = matrixCache.filter(m => m.friend_id === friendId);
+  if (toDelete.length) {
+    const batch = db.batch();
+    toDelete.forEach(m => batch.delete(userMatrixCol().doc(m.id)));
+    await batch.commit();
   }
-});
+}
+function getCell(friendId, appId) {
+  return matrixCache.find(m => m.friend_id === friendId && m.app_id === appId) || null;
+}
+async function upsertCell(friendId, appId, patch) {
+  await userMatrixCol().doc(cellDocId(friendId, appId)).set({
+    friend_id: friendId, app_id: appId, status: 'in_progress',
+    amount_received: 0, amount_pending: 0, note: '',
+    ...patch, updated_at: new Date().toISOString()
+  }, { merge: true });
+}
+async function clearCell(friendId, appId) {
+  await userMatrixCol().doc(cellDocId(friendId, appId)).delete().catch(() => {});
+}
+function getReferralCountForApp(appId) {
+  return matrixCache.filter(m => m.app_id === appId).length;
+}
 
-// App Fetching (Global)
-db.collection('apps').onSnapshot(snap => {
-  appsCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-  renderApps();
-  renderMatrix();
-});
+function renderStats() {
+  statTotalApps.textContent = appsCache.length;
+  statVerified.textContent = appsCache.filter(a => a.verified_by_admin).length;
+  let totalVotes = 0, best = null;
+  appsCache.forEach(a => {
+    const s = getVoteStats(a.id);
+    totalVotes += s.total;
+    if (s.pct !== null && (!best || s.pct > best.pct)) best = { name: a.name, pct: s.pct };
+  });
+  statTotalVotes.textContent = totalVotes;
+  statTopApp.textContent = best ? `${best.name} · ${best.pct}%` : '—';
+}
+
+function renderCategoryOptions() {
+  const cats = [...new Set(appsCache.map(a => a.category).filter(Boolean))].sort();
+  const curCat = categoryFilter.value;
+  categoryFilter.innerHTML = '<option value="">All categories</option>' + cats.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+  if (cats.includes(curCat)) categoryFilter.value = curCat;
+}
+
+function getFilteredSortedApps() {
+  let list = appsCache.slice();
+  const q = searchInput.value.trim().toLowerCase();
+  if (q) list = list.filter(a => a.name && a.name.toLowerCase().includes(q));
+  if (categoryFilter.value) list = list.filter(a => a.category === categoryFilter.value);
+  if (verifiedOnlyCheckbox.checked) list = list.filter(a => a.verified_by_admin);
+
+  const sort = sortSelect.value;
+  list.sort((a, b) => {
+    if (sort === 'top') {
+      const pa = getVoteStats(a.id).pct, pb = getVoteStats(b.id).pct;
+      if (pa === null && pb === null) return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+      if (pa === null) return 1;
+      if (pb === null) return -1;
+      if (pb !== pa) return pb - pa;
+      return getVoteStats(b.id).total - getVoteStats(a.id).total;
+    }
+    if (sort === 'newest') return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+    if (sort === 'joining') return bonusMaxValue(b.joining_type, b.joining_min, b.joining_max) - bonusMaxValue(a.joining_type, a.joining_min, a.joining_max);
+    if (sort === 'referral') return bonusMaxValue(b.referral_type, b.referral_min, b.referral_max) - bonusMaxValue(a.referral_type, a.referral_min, a.referral_max);
+    if (sort === 'az') return (a.name || '').localeCompare(b.name || '');
+    return 0;
+  });
+  return list;
+}
 
 function renderApps() {
-  document.getElementById('appsList').innerHTML = appsCache.map(app => `
-    <div class="ledger-row">
-      <div class="app-icon">${app.name.charAt(0)}</div>
-      <div>
-        <span class="row-name">${app.name}</span>
+  if (!isConfigured) return;
+  const list = getFilteredSortedApps();
+  loadingState.hidden = true;
+  loadingState.style.display = 'none';
+  if (!list.length) { appsList.hidden = true; emptyState.hidden = false; return; }
+  emptyState.hidden = true; appsList.hidden = false;
+  const isTopSort = sortSelect.value === 'top';
+  appsList.innerHTML = list.map((app, i) => renderAppRow(app, i, isTopSort)).join('');
+}
+
+function renderAppRow(app, index, isTopSort) {
+  const stats = getVoteStats(app.id);
+  const pctColor = stats.pct === null ? null : stats.pct >= 70 ? 'var(--green)' : stats.pct >= 40 ? 'var(--gold)' : 'var(--stamp)';
+  const myVote = myVotes[app.id];
+  const isNew = (Date.now() - new Date(app.created_at || 0).getTime()) < 1000 * 60 * 60 * 24 * 3;
+  const isTop = isTopSort && index === 0 && stats.total > 0;
+  const trackedCount = getReferralCountForApp(app.id);
+  const notesShort = app.notes ? truncate(app.notes, 140) : '';
+
+  return `
+  <div class="ledger-row" data-app-id="${escapeHtml(app.id)}">
+    <div class="ledger-serial">${String(index + 1).padStart(3, '0')}</div>
+    <div class="row-main">
+      <div class="row-name-line">
+        ${appIconHtml(app, 'sm')}
+        <span class="row-name">${escapeHtml(app.name)}</span>
         ${app.verified_by_admin ? '<span class="badge badge-verified">✅ Verified</span>' : ''}
+        ${isTop ? '<span class="badge badge-top">🏆 Top pick</span>' : ''}
+        ${isNew ? '<span class="badge badge-new">🆕 New</span>' : ''}
+        ${app.category ? `<span class="badge badge-category">${escapeHtml(app.category)}</span>` : ''}
       </div>
-      <div><strong>Join:</strong> ₹${app.joining_min || 0}</div>
-      <div><strong>Ref:</strong> ₹${app.referral_min || 0}</div>
+      <div class="row-meta">Added by ${escapeHtml(app.added_by || 'Anonymous')} · ${timeAgo(app.created_at)}</div>
+      ${app.notes ? `<div class="row-notes">${escapeHtml(notesShort)}${app.notes.length > 140 ? ` <button class="more-btn" data-action="more">Read more</button>` : ''}</div>` : ''}
     </div>
-  `).join('');
+    <div class="bonus-col">
+      <span class="bonus-label">Joining</span>
+      <span class="bonus-amount ${app.joining_type === 'none' ? 'none' : ''}">${formatBonus(app.joining_type, app.joining_min, app.joining_max)}</span>
+    </div>
+    <div class="bonus-col">
+      <span class="bonus-label">Referral</span>
+      <span class="bonus-amount ${app.referral_type === 'none' ? 'none' : ''}">${formatBonus(app.referral_type, app.referral_min, app.referral_max)}</span>
+    </div>
+    <div class="${stats.pct === null ? 'stamp-pct novotes' : 'stamp-pct'}" ${stats.pct !== null ? `style="background:conic-gradient(${pctColor} ${stats.pct * 3.6}deg, var(--line-soft) 0)"` : ''} title="${stats.total} vote(s)">
+      <span>${stats.pct === null ? 'No data' : stats.pct + '%'}</span>
+    </div>
+    <div class="row-actions">
+      <div class="vote-row">
+        <button class="vote-btn working ${myVote === 'working' ? 'active' : ''}" data-action="vote" data-vote="working" title="Mark as working">👍 ${stats.working}</button>
+        <button class="vote-btn not_working ${myVote === 'not_working' ? 'active' : ''}" data-action="vote" data-vote="not_working" title="Mark as not working">👎 ${stats.not_working}</button>
+      </div>
+      <div class="row-links">
+        <button class="link-btn" data-action="track">👥 Track referral${trackedCount ? ` (${trackedCount})` : ''}</button>
+        <button class="link-btn" data-action="copy">📋 Copy invite</button>
+        <button class="link-btn" data-action="report">🚩 Report</button>
+      </div>
+    </div>
+  </div>`;
 }
 
-// User Data Fetching (Scoped)
-function loadUserData(uid) {
-  db.collection('users').doc(uid).collection('friends').onSnapshot(snap => {
-    friendsCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    renderMatrix();
-  });
-  db.collection('users').doc(uid).collection('matrix').onSnapshot(snap => {
-    matrixCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    renderMatrix();
-  });
-}
-
-// Matrix Rendering
-function renderMatrix() {
-  if (!appsCache.length || !friendsCache.length) {
-    document.getElementById('matrixTable').innerHTML = '<tr><td>No data to display. Add apps and friends.</td></tr>';
+function renderMatrixPanel() {
+  if (!currentUser) {
+    matrixSignInState.hidden = false;
+    matrixNoAppsState.hidden = true; matrixEmptyState.hidden = true;
+    matrixWrap.hidden = true; matrixSummary.hidden = true;
     return;
   }
-  
-  const thead = `<tr><th class="matrix-corner">Friend \\ App</th>${appsCache.map(a => `<th>${a.name}</th>`).join('')}</tr>`;
-  const tbody = friendsCache.map(f => {
-    const cells = appsCache.map(a => {
-      const cell = matrixCache.find(m => m.friend_id === f.id && m.app_id === a.id);
-      const emoji = cell?.status === 'referred' ? '✅' : cell?.status === 'in_progress' ? '⏳' : '➕';
-      return `<td><button class="ghost-btn" onclick="openCell('${f.id}', '${a.id}')">${emoji}<br>₹${cell?.amount_received||0}</button></td>`;
+  matrixSignInState.hidden = true;
+
+  const friends = loadFriends();
+  const apps = appsCache.slice().sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+  const matrix = loadMatrix();
+
+  matrixNoAppsState.hidden = apps.length > 0;
+  if (!apps.length) { matrixWrap.hidden = true; matrixEmptyState.hidden = true; matrixSummary.hidden = true; return; }
+
+  matrixEmptyState.hidden = friends.length > 0;
+  if (!friends.length) { matrixWrap.hidden = true; matrixSummary.hidden = true; return; }
+
+  const friendQ = friendSearch.value.trim().toLowerCase();
+  const appQ = appSearchMatrix.value.trim().toLowerCase();
+  const visibleApps = appQ ? apps.filter(a => a.name && a.name.toLowerCase().includes(appQ)) : apps;
+  const visibleFriends = friendQ ? friends.filter(f => f.name && f.name.toLowerCase().includes(friendQ)) : friends;
+
+  if (!visibleApps.length || !visibleFriends.length) {
+    matrixWrap.hidden = false; matrixSummary.hidden = true;
+    matrixTable.innerHTML = `<tbody><tr><td style="padding:24px; text-align:center; color:var(--ink-soft);">No match for that search.</td></tr></tbody>`;
+    return;
+  }
+  matrixWrap.hidden = false; matrixSummary.hidden = false;
+
+  const cellMap = {};
+  matrix.forEach(m => { cellMap[m.friend_id + '::' + m.app_id] = m; });
+
+  const thead = `<thead><tr>
+    <th class="matrix-corner">Friend ↓ / App →</th>
+    ${visibleApps.map(a => `<th class="matrix-app-head" data-app-col="${escapeHtml(a.id)}" title="${escapeHtml(a.name)}">${appIconHtml(a)}<span class="app-head-name">${escapeHtml(a.name)}</span></th>`).join('')}
+    <th class="matrix-app-head matrix-total-head">Total</th>
+  </tr></thead>`;
+
+  const bodyRows = visibleFriends.map(f => {
+    let rowReceived = 0, rowPending = 0;
+    const cells = visibleApps.map(a => {
+      const cell = cellMap[f.id + '::' + a.id];
+      if (cell) { rowReceived += Number(cell.amount_received || 0); rowPending += Number(cell.amount_pending || 0); }
+      return renderCellButton(f, a, cell);
     }).join('');
-    return `<tr><th class="matrix-corner">${f.name}</th>${cells}</tr>`;
+    return `<tr class="matrix-row">
+      <td class="matrix-friend-cell">
+        <div class="matrix-friend-name">
+          <span>${escapeHtml(f.name)}</span>
+          <div class="friend-actions-group">
+            <button class="friend-opt-btn edit" data-edit-friend="${escapeHtml(f.id)}" title="Rename ${escapeHtml(f.name)}" aria-label="Rename friend">✏️</button>
+            <button class="friend-opt-btn del" data-del-friend="${escapeHtml(f.id)}" title="Remove ${escapeHtml(f.name)}" aria-label="Remove friend">🗑</button>
+          </div>
+        </div>
+      </td>
+      ${cells}
+      <td class="matrix-friend-total">₹${rowReceived.toLocaleString('en-IN')}${rowPending ? `<br><span style="color:var(--stamp)">+₹${rowPending.toLocaleString('en-IN')} due</span>` : ''}</td>
+    </tr>`;
   }).join('');
-  
-  document.getElementById('matrixTable').innerHTML = thead + tbody;
+
+  let grandReceived = 0, grandPending = 0;
+  const totalCells = visibleApps.map(a => {
+    let received = 0, pending = 0;
+    visibleFriends.forEach(f => {
+      const c = cellMap[f.id + '::' + a.id];
+      if (c) { received += Number(c.amount_received || 0); pending += Number(c.amount_pending || 0); }
+    });
+    grandReceived += received; grandPending += pending;
+    return `<td class="matrix-total-cell">₹${received.toLocaleString('en-IN')}${pending ? `<br><span style="color:var(--stamp)">+₹${pending.toLocaleString('en-IN')}</span>` : ''}</td>`;
+  }).join('');
+
+  const totalRow = `<tr class="matrix-total-row">
+    <th class="matrix-corner">Total received</th>
+    ${totalCells}
+    <td class="matrix-total-cell">₹${grandReceived.toLocaleString('en-IN')}${grandPending ? `<br><span style="color:var(--stamp)">+₹${grandPending.toLocaleString('en-IN')}</span>` : ''}</td>
+  </tr>`;
+
+  matrixTable.innerHTML = thead + `<tbody>${bodyRows}${totalRow}</tbody>`;
+
+  matrixSummary.innerHTML = `
+    <div class="summary-card"><span class="num">₹${grandReceived.toLocaleString('en-IN')}</span><span class="lbl">Total received</span></div>
+    <div class="summary-card"><span class="num" style="color:var(--stamp)">₹${grandPending.toLocaleString('en-IN')}</span><span class="lbl">Yet to receive</span></div>
+    <div class="summary-card"><span class="num" style="color:var(--ink);">${friends.length}</span><span class="lbl">Friends tracked</span></div>
+  `;
 }
 
-// Tab Switching
-document.getElementById('tabApps').onclick = () => { document.getElementById('appsPanel').hidden = false; document.getElementById('ledgerPanel').hidden = true; };
-document.getElementById('tabLedger').onclick = () => { document.getElementById('appsPanel').hidden = true; document.getElementById('ledgerPanel').hidden = false; };
+function renderCellButton(friend, app, cell) {
+  const status = cell ? cell.status : null;
+  const meta = status ? STATUS_META[status] : null;
+  const cls = status ? `cell-${status}` : 'cell-empty';
+  const emoji = meta ? meta.emoji : '➕';
+  const received = cell && Number(cell.amount_received) ? `<span class="cell-money received">₹${Number(cell.amount_received).toLocaleString('en-IN')}</span>` : '';
+  const pending = cell && Number(cell.amount_pending) ? `<span class="cell-money pending">+₹${Number(cell.amount_pending).toLocaleString('en-IN')}</span>` : '';
+  const titleBits = `${friend.name} × ${app.name}${meta ? ' — ' + meta.label : ' — not started'}`;
+  return `<td class="${cls}">
+    <button type="button" class="matrix-cell-btn" data-friend="${escapeHtml(friend.id)}" data-app="${escapeHtml(app.id)}" title="${escapeHtml(titleBits)}">
+      <span class="cell-emoji">${emoji}</span>
+      ${received}${pending}
+    </button>
+  </td>`;
+}
 
-// Friend & Cell Modals
-document.getElementById('addFriendBtn').onclick = () => document.getElementById('friendModal').hidden = false;
-document.getElementById('friendForm').onsubmit = async (e) => {
+function listenApps() {
+  db.collection('apps').orderBy('created_at', 'desc').onSnapshot(snap => {
+    appsCache = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    setLocalData(CACHE_APPS_KEY, appsCache);
+    renderCategoryOptions();
+    renderApps();
+    renderStats();
+  }, err => toast('Error fetching apps: ' + err.message, 'error'));
+}
+
+function listenVotes() {
+  db.collection('votes').onSnapshot(snap => {
+    const rawVotes = snap.docs.map(doc => doc.data());
+    setLocalData(CACHE_VOTES_KEY, rawVotes);
+    computeVoteState(rawVotes);
+    renderApps();
+    renderStats();
+  }, err => toast('Error fetching votes: ' + err.message, 'error'));
+}
+
+async function castVote(appId, voteType) {
+  try {
+    const docId = `${appId}_${deviceId}`;
+    const voteData = {
+      app_id: appId,
+      device_id: deviceId,
+      vote_type: voteType,
+      updated_at: new Date().toISOString()
+    };
+    await db.collection('votes').doc(docId).set(voteData);
+
+    const cachedVotes = getLocalData(CACHE_VOTES_KEY, []);
+    const idx = cachedVotes.findIndex(v => v.app_id === appId && v.device_id === deviceId);
+    if (idx > -1) cachedVotes[idx] = voteData;
+    else cachedVotes.push(voteData);
+    setLocalData(CACHE_VOTES_KEY, cachedVotes);
+    computeVoteState(cachedVotes);
+    renderApps();
+    renderStats();
+
+    toast('Thanks for voting!', 'success');
+  } catch (err) { toast('Could not save vote: ' + err.message, 'error'); }
+}
+
+function wireBonusToggle(name, fixedRowId, rangeRowId) {
+  document.querySelectorAll(`input[name="${name}"]`).forEach(r => r.addEventListener('change', () => {
+    const checked = document.querySelector(`input[name="${name}"]:checked`);
+    if (!checked) return;
+    const val = checked.value;
+    $(fixedRowId).hidden = val !== 'fixed';
+    $(rangeRowId).hidden = val !== 'range';
+  }));
+}
+wireBonusToggle('joiningType', 'joinFixedRow', 'joinRangeRow');
+wireBonusToggle('referralType', 'refFixedRow', 'refRangeRow');
+
+function updateIconPreview() {
+  const urlToUse = f_icon.value.trim();
+  iconPreview.innerHTML = appIconHtml({ name: f_name.value.trim() || '?', icon_url: urlToUse }, 'lg');
+}
+
+f_name.addEventListener('input', () => updateIconPreview());
+f_icon.addEventListener('input', () => updateIconPreview());
+
+function openAddModal() {
+  addAppForm.reset();
+  editAppId.value = '';
+  addAppTitle.textContent = '＋ Add an app';
+  addAppSubmitBtn.textContent = 'Add app';
+  joinFixedRow.hidden = true; joinRangeRow.hidden = true;
+  refFixedRow.hidden = true; refRangeRow.hidden = true;
+  updateIconPreview();
+  openModal('addAppModalBackdrop');
+}
+
+addAppForm.addEventListener('submit', async (e) => {
   e.preventDefault();
-  if(!currentUser) return;
-  await db.collection('users').doc(currentUser.uid).collection('friends').add({ name: document.getElementById('friendName').value });
-  document.getElementById('friendModal').hidden = true;
-  document.getElementById('friendForm').reset();
-};
+  const name = f_name.value.trim();
+  if (!name) return;
 
-window.openCell = (fid, aid) => {
-  document.getElementById('cellFid').value = fid;
-  document.getElementById('cellAid').value = aid;
-  const cell = matrixCache.find(m => m.friend_id === fid && m.app_id === aid);
-  document.getElementById('cellStatus').value = cell?.status || '';
-  document.getElementById('cellReceived').value = cell?.amount_received || 0;
-  document.getElementById('cellPending').value = cell?.amount_pending || 0;
-  document.getElementById('cellModal').hidden = false;
-};
+  const joiningType = (document.querySelector('input[name="joiningType"]:checked') || {}).value || 'none';
+  const referralType = (document.querySelector('input[name="referralType"]:checked') || {}).value || 'none';
+  let joining_min = 0, joining_max = 0, referral_min = 0, referral_max = 0;
 
-document.getElementById('cellForm').onsubmit = async (e) => {
+  if (joiningType === 'fixed') { joining_min = joining_max = Number(f_joinFixed.value) || 0; }
+  else if (joiningType === 'range') {
+    joining_min = Number(f_joinMin.value) || 0; joining_max = Number(f_joinMax.value) || 0;
+    if (joining_max < joining_min) { toast('Joining max must be ≥ min', 'error'); return; }
+  }
+  if (referralType === 'fixed') { referral_min = referral_max = Number(f_refFixed.value) || 0; }
+  else if (referralType === 'range') {
+    referral_min = Number(f_refMin.value) || 0; referral_max = Number(f_refMax.value) || 0;
+    if (referral_max < referral_min) { toast('Referral max must be ≥ min', 'error'); return; }
+  }
+
+  try {
+    addAppSubmitBtn.disabled = true;
+
+    const payload = {
+      name, category: f_category.value.trim() || null,
+      icon_url: f_icon.value.trim() || null,
+      joining_type: joiningType, joining_min, joining_max,
+      referral_type: referralType, referral_min, referral_max,
+      notes: f_notes.value.trim() || null,
+      added_by: f_addedBy.value.trim() || 'Anonymous',
+      created_at: new Date().toISOString(),
+      verified_by_admin: false
+    };
+    await db.collection('apps').add(payload);
+    toast('App added — thank you!', 'success');
+    closeModal('addAppModalBackdrop');
+  } catch (err) { toast('Save failed: ' + err.message, 'error'); }
+  finally { addAppSubmitBtn.disabled = false; }
+});
+
+function openReportModal(app) {
+  reportAppId.value = app.id;
+  reportAppName.textContent = `Reporting: ${app.name}`;
+  reportReason.value = '';
+  openModal('reportModalBackdrop');
+}
+reportForm.addEventListener('submit', async (e) => {
   e.preventDefault();
-  if(!currentUser) return;
-  const fid = document.getElementById('cellFid').value;
-  const aid = document.getElementById('cellAid').value;
-  await db.collection('users').doc(currentUser.uid).collection('matrix').doc(`${fid}_${aid}`).set({
-    friend_id: fid, app_id: aid,
-    status: document.getElementById('cellStatus').value,
-    amount_received: Number(document.getElementById('cellReceived').value),
-    amount_pending: Number(document.getElementById('cellPending').value)
-  });
-  document.getElementById('cellModal').hidden = true;
-};
+  try {
+    await db.collection('reports').add({
+      app_id: reportAppId.value,
+      reason: reportReason.value.trim(),
+      created_at: new Date().toISOString()
+    });
+    toast('Report submitted — thanks for flagging this', 'success');
+    closeModal('reportModalBackdrop');
+  } catch (err) { toast('Could not submit report: ' + err.message, 'error'); }
+});
+
+const googleProvider = new firebase.auth.GoogleAuthProvider();
+
+async function signInWithGoogle() {
+  try {
+    await auth.signInWithPopup(googleProvider);
+  } catch (err) {
+    toast('Sign-in failed: ' + err.message, 'error');
+  }
+}
+googleSignInBtn.addEventListener('click', signInWithGoogle);
+matrixSignInBtn.addEventListener('click', signInWithGoogle);
+
+signOutBtn.addEventListener('click', async () => {
+  await auth.signOut();
+  toast('Signed out', 'success');
+});
+
+function setUserState(user) {
+  currentUser = user;
+  googleSignInBtn.hidden = !!user;
+  userChip.hidden = !user;
+  if (user) {
+    userAvatar.src = user.photoURL || '';
+    userName.textContent = user.displayName || user.email || 'Signed in';
+  }
+  listenUserData();
+}
+
+function trackReferral(app) {
+  showPanel('ledger');
+  setTimeout(() => {
+    const th = matrixTable.querySelector(`[data-app-col="${app.id}"]`);
+    if (th) {
+      th.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      th.classList.add('col-flash');
+      setTimeout(() => th.classList.remove('col-flash'), 1600);
+    } else if (!loadFriends().length) {
+      toast(`Add a friend first, then mark progress for ${app.name}`, 'info');
+    }
+  }, 80);
+}
+function copyInvite(app) {
+  const joining = formatBonus(app.joining_type, app.joining_min, app.joining_max);
+  const referral = formatBonus(app.referral_type, app.referral_min, app.referral_max);
+  let msg = `Hey! I'm using ${app.name} — `;
+  if (app.referral_type !== 'none') msg += `you get a referral bonus (${referral}) if you sign up with my code/link. `;
+  if (app.joining_type !== 'none') msg += `Plus there's a joining bonus too (${joining}). `;
+  msg += `Ping me and I'll send the link!`;
+  navigator.clipboard.writeText(msg)
+    .then(() => toast('Invite message copied to clipboard', 'success'))
+    .catch(() => toast('Could not copy — clipboard blocked', 'error'));
+}
+
+appsList.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-action]'); if (!btn) return;
+  const row = btn.closest('.ledger-row');
+  if (!row) return;
+  const appId = row.dataset.appId;
+  const app = appsCache.find(a => a.id === appId);
+  if (!app) return;
+  switch (btn.dataset.action) {
+    case 'vote': castVote(appId, btn.dataset.vote); break;
+    case 'report': openReportModal(app); break;
+    case 'track': trackReferral(app); break;
+    case 'copy': copyInvite(app); break;
+    case 'more': {
+      const notesEl = row.querySelector('.row-notes');
+      if (notesEl) notesEl.innerHTML = escapeHtml(app.notes) + ' <button class="more-btn" data-action="less">Show less</button>';
+      break;
+    }
+    case 'less': {
+      const notesEl = row.querySelector('.row-notes');
+      if (notesEl) notesEl.innerHTML = escapeHtml(truncate(app.notes, 140)) + ' <button class="more-btn" data-action="more">Read more</button>';
+      break;
+    }
+  }
+});
+
+function openCellModal(friend, app, cell) {
+  cellFriendId.value = friend.id;
+  cellAppId.value = app.id;
+  cellModalSub.textContent = `${friend.name} × ${app.name}`;
+  cellStatus.value = cell ? cell.status : '';
+  cellReceived.value = cell && Number(cell.amount_received) ? cell.amount_received : '';
+  cellPending.value = cell && Number(cell.amount_pending) ? cell.amount_pending : '';
+  cellNote.value = cell ? (cell.note || '') : '';
+  openModal('cellModalBackdrop');
+}
+
+matrixTable.addEventListener('click', (e) => {
+  const cellBtn = e.target.closest('.matrix-cell-btn');
+  if (cellBtn) {
+    const friend = loadFriends().find(f => f.id === cellBtn.dataset.friend);
+    const app = appsCache.find(a => a.id === cellBtn.dataset.app);
+    if (!friend || !app) return;
+    openCellModal(friend, app, getCell(friend.id, app.id));
+    return;
+  }
+  const editBtn = e.target.closest('[data-edit-friend]');
+  if (editBtn) {
+    const fid = editBtn.dataset.editFriend;
+    const friend = loadFriends().find(f => f.id === fid);
+    if (!friend) return;
+    addFriendForm.reset();
+    editFriendId.value = friend.id;
+    addFriendNameInput.value = friend.name;
+    addFriendTitle.textContent = '✏️ Rename friend';
+    addFriendSubmitBtn.textContent = 'Save name';
+    openModal('addFriendModalBackdrop');
+    setTimeout(() => addFriendNameInput.focus(), 60);
+    return;
+  }
+  const delBtn = e.target.closest('[data-del-friend]');
+  if (delBtn) {
+    const fid = delBtn.dataset.delFriend;
+    const friend = loadFriends().find(f => f.id === fid);
+    confirmAction(`Remove ${friend ? friend.name : 'this friend'} from your grid? This deletes all their saved cells too.`).then(async ok => {
+      if (ok) {
+        try { await deleteFriend(fid); renderMatrixPanel(); toast('Friend removed', 'success'); }
+        catch (err) { toast('Could not remove friend: ' + err.message, 'error'); }
+      }
+    });
+  }
+});
+
+cellForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const friendId = cellFriendId.value, appId = cellAppId.value;
+  const status = cellStatus.value;
+  try {
+    if (!status) {
+      await clearCell(friendId, appId);
+      toast('Cell cleared', 'success');
+    } else {
+      await upsertCell(friendId, appId, {
+        status,
+        amount_received: Number(cellReceived.value) || 0,
+        amount_pending: Number(cellPending.value) || 0,
+        note: cellNote.value.trim()
+      });
+      toast('Saved', 'success');
+    }
+    closeModal('cellModalBackdrop');
+    renderMatrixPanel();
+  } catch (err) { toast('Could not save: ' + err.message, 'error'); }
+});
+
+function launchAddFriendModal() {
+  addFriendForm.reset();
+  editFriendId.value = '';
+  addFriendTitle.textContent = '＋ Add a friend';
+  addFriendSubmitBtn.textContent = 'Add to grid';
+  openModal('addFriendModalBackdrop');
+  setTimeout(() => addFriendNameInput.focus(), 60);
+}
+addFriendBtn.addEventListener('click', launchAddFriendModal);
+emptyAddFriendBtn.addEventListener('click', launchAddFriendModal);
+
+/* Bug 2 Fix: Prevent duplicate names when renaming as well as adding */
+addFriendForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const name = addFriendNameInput.value.trim();
+  if (!name) return;
+  const dup = loadFriends().some(f => f.name.toLowerCase() === name.toLowerCase() && f.id !== editFriendId.value);
+  if (dup) {
+    toast('That friend is already in your grid', 'error');
+    return;
+  }
+  try {
+    if (editFriendId.value) {
+      await renameFriend(editFriendId.value, name);
+      toast('Friend name updated', 'success');
+    } else {
+      await addFriend(name);
+      toast(`${name} added to the grid`, 'success');
+    }
+    closeModal('addFriendModalBackdrop');
+    renderMatrixPanel();
+  } catch (err) { toast('Could not save friend: ' + err.message, 'error'); }
+});
+
+friendSearch.addEventListener('input', debounce(renderMatrixPanel, 150));
+appSearchMatrix.addEventListener('input', debounce(renderMatrixPanel, 150));
+
+function showPanel(name) {
+  appsPanel.hidden = name !== 'apps';
+  ledgerPanel.hidden = name !== 'ledger';
+  tabApps.classList.toggle('active', name === 'apps');
+  tabLedger.classList.toggle('active', name === 'ledger');
+  tabApps.setAttribute('aria-selected', String(name === 'apps'));
+  tabLedger.setAttribute('aria-selected', String(name === 'ledger'));
+  if (name === 'ledger') renderMatrixPanel();
+  if (name === 'apps') renderApps();
+}
+tabApps.addEventListener('click', () => showPanel('apps'));
+tabLedger.addEventListener('click', () => showPanel('ledger'));
+
+searchInput.addEventListener('input', debounce(renderApps, 200));
+categoryFilter.addEventListener('change', renderApps);
+sortSelect.addEventListener('change', renderApps);
+verifiedOnlyCheckbox.addEventListener('change', renderApps);
+addAppBtn.addEventListener('click', openAddModal);
+emptyAddBtn.addEventListener('click', openAddModal);
+
+document.querySelectorAll('[data-close]').forEach(btn => btn.addEventListener('click', () => closeModal(btn.dataset.close)));
+document.querySelectorAll('.modal-backdrop').forEach(bd => bd.addEventListener('click', (e) => { if (e.target === bd) bd.hidden = true; }));
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') document.querySelectorAll('.modal-backdrop').forEach(bd => bd.hidden = true); });
+
+const savedTheme = localStorage.getItem('upi_theme');
+if (savedTheme) { document.body.dataset.theme = savedTheme; themeToggle.textContent = savedTheme === 'dark' ? '☀️' : '🌙'; }
+themeToggle.addEventListener('click', () => {
+  const next = document.body.dataset.theme === 'dark' ? 'light' : 'dark';
+  document.body.dataset.theme = next;
+  localStorage.setItem('upi_theme', next);
+  themeToggle.textContent = next === 'dark' ? '☀️' : '🌙';
+});
+
+function init() {
+  if (!isConfigured) {
+    connBanner.hidden = false;
+    loadingState.hidden = true;
+    emptyState.hidden = false;
+    emptyState.querySelector('p').textContent = '⚠️ Connect your Firebase project to start using the ledger.';
+    emptyAddBtn.hidden = true;
+    return;
+  }
+
+  if (appsCache.length > 0) {
+    renderCategoryOptions();
+    renderApps();
+    renderStats();
+  }
+
+  auth.onAuthStateChanged(user => setUserState(user));
+  listenApps();
+  listenVotes();
+}
+document.addEventListener('DOMContentLoaded', init);
 </script>
 </body>
 </html>
