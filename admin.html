@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard - UPI Ledger</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{ --ink:#1B2A2E; --green:#1F7A4D; --stamp:#B4472D; --paper:#FBF8F1; --paper-raised:#FFFFFF; --line:#DAD3BF; }
+  body{ margin:0; font-family:'Inter',sans-serif; background:var(--paper); color:var(--ink); padding:20px; }
+  .admin-header{ display:flex; justify-content:space-between; align-items:center; background:var(--ink); color:var(--paper); padding:16px 24px; border-radius:12px; margin-bottom:24px;}
+  .btn{ background:var(--green); color:#fff; border:none; padding:10px 16px; border-radius:8px; cursor:pointer; font-weight:600;}
+  .btn-danger{ background:var(--stamp); }
+  .card{ background:var(--paper-raised); border:1px solid var(--line); border-radius:12px; padding:20px; margin-bottom:20px; }
+  .grid{ display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  .list-row{ display:flex; justify-content:space-between; padding:12px; border-bottom:1px solid var(--line); align-items:center;}
+  input, textarea{ width:100%; padding:10px; border:1px solid var(--line); border-radius:6px; margin-top:6px; margin-bottom:12px;}
+  .auth-box{ max-width:400px; margin:100px auto; }
+</style>
+</head>
+<body>
+
+<div id="loginScreen" class="auth-box card">
+  <h2>Admin Sign In</h2>
+  <form id="loginForm">
+    <label>Email <input type="email" id="adminEmail" required></label>
+    <label>Password <input type="password" id="adminPassword" required></label>
+    <button type="submit" class="btn" style="width:100%">Sign In</button>
+  </form>
+</div>
+
+<div id="dashboardScreen" hidden>
+  <div class="admin-header">
+    <h2>🛡️ UPI Ledger Admin</h2>
+    <button id="logoutBtn" class="btn btn-danger">Sign Out</button>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h3>Manage Apps</h3>
+      <form id="appForm">
+        <input type="hidden" id="appId">
+        <label>Name <input type="text" id="appName" required></label>
+        <label>Joining Min <input type="number" id="joinMin" value="0"></label>
+        <label>Referral Min <input type="number" id="refMin" value="0"></label>
+        <label><input type="checkbox" id="appVerified"> Verified by Admin</label>
+        <br><br>
+        <button type="submit" class="btn">Save App</button>
+        <button type="button" class="btn btn-danger" onclick="document.getElementById('appForm').reset(); document.getElementById('appId').value='';">Clear Form</button>
+      </form>
+      <div id="appsList" style="margin-top:20px;"></div>
+    </div>
+
+    <div class="card">
+      <h3>Pending Reports</h3>
+      <div id="reportsList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+<script>
+// Use the EXACT SAME config as index.html
+const firebaseConfig = {
+  apiKey: "AIzaSyBK5qMGiDmNmZvXaoZL-4ADiScP7Mkhfns",
+  authDomain: "freemoney-cb6b4.firebaseapp.com",
+  projectId: "freemoney-cb6b4"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+// Auth Logic
+auth.onAuthStateChanged(user => {
+  if (user) {
+    document.getElementById('loginScreen').hidden = true;
+    document.getElementById('dashboardScreen').hidden = false;
+    listenData();
+  } else {
+    document.getElementById('loginScreen').hidden = false;
+    document.getElementById('dashboardScreen').hidden = true;
+  }
+});
+
+document.getElementById('loginForm').onsubmit = (e) => {
+  e.preventDefault();
+  auth.signInWithEmailAndPassword(document.getElementById('adminEmail').value, document.getElementById('adminPassword').value)
+      .catch(err => alert(err.message));
+};
+document.getElementById('logoutBtn').onclick = () => auth.signOut();
+
+// Data Management
+let apps = [];
+function listenData() {
+  db.collection('apps').onSnapshot(snap => {
+    apps = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    document.getElementById('appsList').innerHTML = apps.map(app => `
+      <div class="list-row">
+        <div><strong>${app.name}</strong> ${app.verified_by_admin ? '✅' : ''}</div>
+        <div>
+          <button class="btn" onclick='editApp(${JSON.stringify(app)})'>Edit</button>
+          <button class="btn btn-danger" onclick="deleteApp('${app.id}')">Delete</button>
+        </div>
+      </div>
+    `).join('');
+  });
+
+  db.collection('reports').onSnapshot(snap => {
+    document.getElementById('reportsList').innerHTML = snap.docs.map(d => {
+      const r = d.data();
+      const appName = apps.find(a => a.id === r.app_id)?.name || 'Unknown App';
+      return `<div class="list-row">
+        <div><strong>${appName}</strong>: ${r.reason}</div>
+        <button class="btn" onclick="db.collection('reports').doc('${d.id}').delete()">Dismiss</button>
+      </div>`;
+    }).join('');
+  });
+}
+
+document.getElementById('appForm').onsubmit = async (e) => {
+  e.preventDefault();
+  const id = document.getElementById('appId').value;
+  const payload = {
+    name: document.getElementById('appName').value,
+    joining_min: Number(document.getElementById('joinMin').value),
+    referral_min: Number(document.getElementById('refMin').value),
+    verified_by_admin: document.getElementById('appVerified').checked,
+    updated_at: new Date().toISOString()
+  };
+  
+  if (id) await db.collection('apps').doc(id).update(payload);
+  else await db.collection('apps').add(payload);
+  
+  document.getElementById('appForm').reset();
+  document.getElementById('appId').value = '';
+};
+
+window.editApp = (app) => {
+  document.getElementById('appId').value = app.id;
+  document.getElementById('appName').value = app.name;
+  document.getElementById('joinMin').value = app.joining_min || 0;
+  document.getElementById('refMin').value = app.referral_min || 0;
+  document.getElementById('appVerified').checked = app.verified_by_admin || false;
+};
+
+window.deleteApp = async (id) => {
+  if (confirm("Delete this app forever?")) await db.collection('apps').doc(id).delete();
+};
+</script>
+</body>
+</html>
